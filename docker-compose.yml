@@ -1,0 +1,70 @@
+version: "3.7"
+services:
+    yami-web:
+        image: nws/yami:latest
+        container_name: yami-web
+        hostname: yami-web
+        networks:
+            - yami
+        restart: unless-stopped
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.yami-prod.entrypoints=websecure
+            - traefik.http.routers.yami-prod.rule=Host(`yami.company.com`)
+            - traefik.http.routers.yami-prod.tls=true
+            - traefik.http.routers.yami-prod.service=yami-prod
+            - traefik.http.services.yami-prod.loadbalancer.server.port=5000
+            - traefik.docker.network=yami
+            - com.centurylinklabs.watchtower.enable=true
+        environment:
+            FLASK_APP: 'app'
+            FLASK_ENV: 'production'
+            REDIS_URL: 'redis://yami-redis'
+            LDAP_HOST: 'dc.company.com'
+            LDAP_USERNAME: 'CN=...,DC=company,DC=com'
+            LDAP_PASSWORD: '...'
+            LDAP_BASE_DN: 'OU=...,DC=company,DC=com'
+            LDAP_ROLES: '{"admin":["CN=..."],"read-only":["CN=..."]}'
+            DNS_SERVERS: '["..."]'
+            DNS_SUFFIXES: '["..."]'
+            DNAC_HOST: '...'
+            DNAC_USERNAME: '...'
+            DNAC_PASSWORD: '...'
+
+        healthcheck:
+          test: curl --fail -s http://localhost:5000/ || exit 1
+          interval: 1m30s
+          timeout: 10s
+          retries: 3
+
+    yami-worker:
+        image: nws/yami:latest
+        command: celery -A worker worker --concurrency=4 --loglevel=INFO
+        working_dir: /yami
+        container_name: yami-worker
+        hostname: yami-worker
+        networks:
+            - yami
+        restart: unless-stopped
+        labels:
+            - com.centurylinklabs.watchtower.enable=true
+
+    yami-redis:
+        image: redis:latest
+        container_name: yami-redis
+        hostname: yami-redis
+        networks:
+            - yami
+        restart: unless-stopped
+        labels:
+            - com.centurylinklabs.watchtower.enable=true
+
+networks:
+  yami:
+    driver: bridge
+    name: yami
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.14.0/24
+          gateway: 192.168.14.1
