@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col">
+        <br>
+        <h4>Welcome {{user.firstname}} !</h4>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+{% for name,content in link_map.items() %}
+    <!-- {{name}} -->
+    <div class="col-md-3">
+        <div class="card border-primary mb-3 h-90" >
+            <div class="card-header">{{name}}</div>
+            <div class="card-body">
+              <p class="card-text">{{content["text"]}}</p>
+            </div>
+            <div class="card-footer d-grid gap-2">
+                <a href="{{content['url']}}" class="btn btn-primary">Start</a>
+            </div>
+          </div>
+    </div>
+{% endfor %}
+</div>
+
+
+{% endblock %}

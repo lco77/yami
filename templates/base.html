@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="shortcut icon" href="{{ url_for('static',filename='favicon.ico')}}" />
+
+  <title>{% block title %}{% endblock %}</title>
+
+  <!-- Light/Dark Themes -->
+  {% if theme == 'dark' %}
+  <link id="theme-style" rel="stylesheet" href="{{ url_for('static',filename='css/darkly.min.css')}}">
+  {% else %}
+  <link id="theme-style" rel="stylesheet" href="{{ url_for('static',filename='css/flatly.min.css')}}">
+  {% endif %}
+
+  <!-- Bootstrap -->
+  <link href="{{ url_for('static',filename='css/bootstrap-icons.css')}}" rel="stylesheet">
+  <script src="{{ url_for('static',filename='js/bootstrap.bundle.min.js')}}"></script>
+
+  <!-- jQuery -->
+  <script src="{{ url_for('static',filename='js/jquery-3.7.1.min.js')}}"></script>
+
+  <!-- Datatables -->
+  <link href="{{ url_for('static',filename='css/datatables.min.css')}}" rel="stylesheet">
+  <script src="{{ url_for('static',filename='js/datatables.min.js')}}"></script>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static',filename='api.js')}}"></script>
+  <script src="{{ url_for('static',filename='ui.js')}}"></script>
+
+  <style>
+    body,
+    html {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Fixed top nav */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      z-index: 1030;
+    }
+
+    .main-content {
+      position: absolute;
+      top: 50px;                /* Matches .top-nav height */
+      bottom: 0;
+      left: 0;
+      right: 0;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    /* Scrollable content area under nav */
+    /*.main-content {
+      padding-top: 50px;
+      height: calc(100% - 50px);
+      overflow-y: auto;
+    } */
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Fixed top nav -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary top-nav">
+    <div class="container-fluid">
+      <!--<img src="{{ url_for('static',filename='favicon.svg')}}">-->
+      <a class="navbar-brand" href="/">vNoc</a>
+
+      <!-- Left-aligned items -->
+      <ul class="navbar-nav me-auto">
+        {% if session["username"] %}
+        <!-- LAN -->
+        <li class="nav-item"><a class="nav-link" href="{{url_for('ui_lan.index')}}">LAN</a></li>
+        {% endif %}
+
+      </ul>
+
+      <!-- Right-aligned items -->
+      <ul class="navbar-nav ms-auto">
+        <!-- spinner-->
+        <li class="nav-item d-flex align-items-center">
+          <div id="spinner" class="spinner-border spinner-border-sm text-warning" role="status" style="display: none;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </li>
+        {% if session["username"] %}
+        <!-- about / logout -->
+        <li class="nav-item"><a class="nav-link" href="/about">{{user.fullname}}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+        {% endif %}
+        <!-- toggle dark/light theme -->
+        <li class="nav-item d-flex align-items-center">
+          <form method="POST" action="{{ url_for('toggle_theme') }}">
+            {% if theme == 'dark' %}
+            <input type="hidden" name="theme" value="light">
+            {% else %}
+            <input type="hidden" name="theme" value="dark">
+            {% endif %}
+            <button type="submit" id="toggleTheme" class="btn btn-sm"><i class="bi bi-circle-half"></i></button>
+          </form>
+        </li>
+      </ul>
+
+    </div>
+  </nav>
+
+  <!-- Scrollable main content -->
+  <div class="container-fluid main-content">
+    <!-- alert placeholder -->
+    <div class="row">
+      <div class="col">
+        <div id="alert" class="alert alert-dismissible" style="display: none;">
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          <h4 class="alert-heading"></h4>
+          <p class="mb-0"></p>
+        </div>
+      </div>
+    </div>
+    <!-- view content -->
+    {% block content %}{% endblock %}
+  </div>
+
+  {% block script %}{% endblock %}
+</body>
+
+
+
+</html>

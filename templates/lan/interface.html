@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Switch{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <br>
+        <h4>{{hostname}} - {{if_name}}</h4>
+        <hr>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" data-bs-toggle="tab" href="#tab1" aria-selected="true" role="tab">Summary</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab" tabindex="-1">Version</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
+        </li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane fade active show" id="tab1" role="tabpanel">
+            <div id="tab1-content"></div>
+            
+        </div>
+        <div class="tab-pane fade" id="tab2" role="tabpanel">
+            <div id="tab2-content"></div>
+        </div>
+        <div class="tab-pane fade" id="tab3" role="tabpanel">
+            <div id="tab3-content"><table id="interfaceTable"></table></div>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const id = "{{id}}";
+    const hostname = "{{hostname}}";
+    const data = {{data|tojson}};
+    const pollInterval = 2000;
+    const resolveDnsUrl = "{{url_for('resolve')}}";
+    const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
+    const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
+    const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',id='ID',if_name='IF') }}";
+    const tasks = [
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.dnsResolvedManagementAddress,
+                use_textfsm: false,
+                device_type: "cisco_ios",
+                cmd: "sh version"
+            },
+            render: (result) => {
+                $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw_output|| "❌ Task failed")}</code></pre>`);
+            }
+        },
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.dnsResolvedManagementAddress,
+                use_textfsm: true,
+                device_type: "cisco_ios",
+                cmd: "sh int"
+            },
+            render: (result) => {
+                //$("#tab3-content").html(`<pre><code>${escapeHtml(result.parsed|| "❌ Task failed")}</code></pre>`);
+                if (result.parsed) {
+                $("#interfaceTable").DataTable({
+                    layout: {
+                        topStart: 'search',
+                        topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                    },
+                    pageLength: 25,
+                    fixedHeader: true,
+                    data: result.parsed,
+                    columns: [
+                        { title: 'Interface', data: "interface", render:function (data, type, row) {
+                            const ifLink = data.replaceAll("/", "_");
+                            return  `<b><a href=${showInterfaceUrl.replace('ID',id).replace('IF',ifLink)}>${row.interface}</a></b>`;
+                        } },
+                        { title: 'Description', data: "description" },
+                        { title: 'Status', data: "protocol_status", render:function (data, type, row) {
+                            if (data.startsWith("up")) {
+                                return `<p class="text-success">${data}</p>`;
+                            } else {
+                                return `<p class="text-danger">${data}</p>`;
+                            }
+                        } },
+                        { title: 'Speed', data: "speed" },
+                        { title: 'Duplex', data: "duplex" },
+                        { title: 'inRate', data: "input_rate" },
+                        { title: 'outRate', data: "output_rate" },
+                        { title: 'inErrors', data: "input_errors" },
+                        { title: 'outErrors', data: "output_errors" },
+                        { title: 'queueDrops', data: "queue_drops" },
+                    ]
+                });
+            } else {
+                $("#tab3-content").html("❌ Task failed");
+            }
+            }
+        }
+    ];
+
+
+    $(document).ready(function () {
+        showLanDeviceSummary(data,"#tab1-content");
+        show('#spinner');
+
+        runTasks(tasks)
+        .then(updatedTasks => {
+            updatedTasks.forEach((task, i) => {
+            const selector = task.target;
+            if (task.result.error) {
+                $(selector).html("❌ " + task.result.error);
+            } else {
+                drawResult(task.result, selector);
+            }
+            });
+        })
+        .finally(() => {
+            hide('#spinner');
+        });
+
+    });
+
+</script>
+{% endblock %}

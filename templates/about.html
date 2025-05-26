@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col">
+        <br>
+        <h4>{{ user.fullname }}</h4>
+        <hr>
+    </div>
+</div>
+
+<ul>
+    <li>
+        Username: {{ user.username }}
+    </li>
+    <li>
+        Full name: {{ user.fullname }}
+    </li>
+    <li>
+        E-mail: {{ user.email }}
+    </li>
+    <li>
+        Roles: {{ user.roles }}
+    </li>
+</ul>
+
+
+{% endblock %}

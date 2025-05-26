@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}LAN{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <br>
+        <h4>LAN</h4>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <table id="table"  class="table align-top"></table>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+    const getSwitchesUrl = "{{ url_for('api_dnac.get_devices') }}";
+    const showSwitchUrl = "{{ url_for('ui_lan.show_device',id='DUMMY') }}";
+    // get data and render table
+    $(document).ready(function () {
+        show('#spinner');
+        get(getSwitchesUrl + "?family=Switches and Hubs")
+        .then(data=> {
+            $('#table').DataTable({
+                layout: {
+                    topStart: 'search',
+                    topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                },
+                pageLength: 10,
+                fixedHeader: true,
+                data: data,
+                columns: [
+                    {
+                        title: 'Hostname', data: "hostname", render: function (data, type, row) {
+                            return `<b><a href=${showSwitchUrl.replace('DUMMY',row.id)}>${row.hostname}</a></b>`
+                        }
+                    },
+                    { title: 'IP Address', data: "ip_address" },
+                    { title: 'Version', data: "version" },
+                    {
+                        title: 'Model', data: "platform", render: function (data, type, row) {
+                            if (data) {
+                                return data.join('<br>');
+                            } else {
+                                return null;
+                            }
+                        }
+                    },
+                    {
+                        title: 'Serial', data: "serial", render: function (data, type, row) {
+                            if (data) {
+                                return data.join('<br>');
+                            } else {
+                                return null;
+                            }
+                        }
+                    },
+                    { title: 'Stack Size', data: "stack" },
+                    { title: 'Uptime (days)', data: "uptime" },
+                ]
+            });
+            hide('#spinner');
+        })
+        .catch(error=>{
+            show_alert("danger","Failed to contact Cisco DNAC",error)
+            hide('#spinner');
+            console.log(error);
+        });
+    });
+</script>
+{% endblock %}
