@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP=app
 ENV FLASK_ENV=production
 
-ENV REDIS_URL="redis://yami"
+ENV REDIS_URL="redis://yami-redis"
 
 ENV LDAP_HOST="ldaps.straumann.com"
 ENV LDAP_USERNAME="CN=app_nwsldp,OU=special_users,OU=ch01,OU=users,OU=prod,OU=_straumann,DC=straumann,DC=com"
