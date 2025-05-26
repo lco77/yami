@@ -1,7 +1,7 @@
 version: "3.7"
 services:
     yami-web:
-        image: registry.nws.straumann.com/nws/yami-prod:latest
+        image: registry.nws.straumann.com/nws/yami:latest
         container_name: yami-web
         hostname: yami-web
         networks:
