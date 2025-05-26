@@ -25,7 +25,7 @@ services:
     yami-worker:
         image: registry.nws.straumann.com/nws/yami-prod:latest
         command: celery -A worker worker --loglevel=INFO
-        working_dir: /
+        working_dir: /yami
         container_name: yami-worker
         hostname: yami-worker
         networks:
