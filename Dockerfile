@@ -46,7 +46,8 @@ RUN pip install -r requirements.txt
 #RUN chmod +x /tini
 
 # copy every content to the image
-COPY --chown=yami:yami /yami /yami
+RUN mkdir /yami
+COPY --chown=yami:yami / /yami
 
 # change user
 USER yami
@@ -55,4 +56,4 @@ USER yami
 EXPOSE 5000
 
 #set entrypoint
-CMD ["gunicorn", "--chdir", ".", "--bind", "0.0.0.0:5000", "app:app", "--workers", "1", "--threads", "5"]
+CMD ["gunicorn", "--chdir", "/yami", "--bind", "0.0.0.0:5000", "app:app", "--workers", "1", "--threads", "5"]
