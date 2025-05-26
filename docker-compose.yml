@@ -1,0 +1,54 @@
+version: "3.7"
+services:
+    yami-web:
+        image: registry.nws.straumann.com/nws/yami-prod:latest
+        container_name: yami-web
+        hostname: yami-web
+        networks:
+            - yami
+        restart: unless-stopped
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.yami-prod.entrypoints=websecure
+            - traefik.http.routers.yami-prod.rule=Host(`yami.nws.straumann.com`)
+            - traefik.http.routers.yami-prod.tls=true
+            - traefik.http.routers.yami-prod.service=yami-prod
+            - traefik.http.services.yami-prod.loadbalancer.server.port=5000
+            - traefik.docker.network=yami
+            - com.centurylinklabs.watchtower.enable=true
+        healthcheck:
+          test: curl --fail -s http://localhost:5000/ || exit 1
+          interval: 1m30s
+          timeout: 10s
+          retries: 3
+
+    yami-worker:
+        image: registry.nws.straumann.com/nws/yami-prod:latest
+        command: celery -A worker worker --loglevel=INFO
+        working_dir: /
+        container_name: yami-worker
+        hostname: yami-worker
+        networks:
+            - yami
+        restart: unless-stopped
+        labels:
+            - com.centurylinklabs.watchtower.enable=true
+
+    yami-redis:
+        image: redis:latest
+        container_name: yami-redis
+        hostname: yami-redis
+        networks:
+            - yami
+        restart: unless-stopped
+        labels:
+            - com.centurylinklabs.watchtower.enable=true
+
+networks:
+  yami:
+    driver: bridge
+    name: yami
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.14.0/24
