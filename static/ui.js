@@ -1,13 +1,28 @@
-function showLanDeviceSummary(data,selector) {
-    //let html = '<table class="table table-bordered table-sm">';
-    let html = '<table class="table table-striped">';
-    html += '<thead><tr><th>Key</th><th>Value</th></tr></thead><tbody>';
-  
-    for (const [key, value] of Object.entries(data)) {
-      html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+
+
+
+// render a table from an object
+function objectToTable(obj, selector) {
+  const $table = $('<table class="table table-striped"><tbody></tbody></table>');
+  const $tbody = $table.find('tbody');
+
+  for (const [key, value] of Object.entries(obj)) {
+    $tbody.append(`<tr><td><p class="text-primary"><b>${key}</b></p></td><td>${value}</td></tr>`);
+  }
+
+  $(selector).html($table);
+}
+
+// filter and re-map object keys, then return new object
+function mapObjectKeys(source, keyMap) {
+  const result = {};
+
+  keyMap.forEach(entry => {
+    const [srcKey, dstKey] = Object.entries(entry)[0];
+    if (srcKey in source) {
+      result[dstKey] = source[srcKey];
     }
+  });
   
-    html += '</tbody></table>';
-  
-    $(selector).html(html);
+  return result;
 }

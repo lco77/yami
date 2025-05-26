@@ -315,15 +315,11 @@ async def resolve():
     
     for suffix in DNS_SUFFIXES:
         fqdn = name if suffix == "" else f"{name}.{suffix}"
-        
         try:
-            print(f"try resolving {fqdn}")
             result = await resolver.gethostbyname(fqdn, socket.AF_INET)
-            print(result)
             if result and result.addresses:
                 return jsonify({"ip": result.addresses[0], "fqdn": fqdn})
         except Exception as e:
-            print(e)
             continue  # try next suffix
 
     return jsonify({"error": f"Could not resolve {name}"}), 404

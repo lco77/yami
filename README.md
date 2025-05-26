@@ -1,28 +1,43 @@
-# Flask-LDAP-Celery
+# yami - yet another management interface (for your network)
 
-Flask boilerplate aiming at simplicity:
+Yami is an early stage project, which aims at facilitating network operations for network engineers and IT support colleagues.
+
+
+## Roadmap
+
+- Cisco DNAC integration
+
+Browse and troubleshoot LAN devices. Possibly perform basic NMS operations with them.
+
+- Cisco SDWAN integration
+
+Browse and troubleshoot WAN devices. Possibly perform basic NMS operations with them.
+
+- Cisco Meraki Wireless integration
+
+Browse and troubleshoot Meraki Wireless devices. Possibly perform basic NMS operations with them.
+
+
+## High level architecture
 
 - LDAP authentication with group to role mapping (typically for use with Active Directory)
 - Celery integration to offload long running tasks
 - Clear UI versus API separation
-- Client-side sessions
+- Server-side sessions
 - Minimalist Bootstrap frontend using JQuery only
 - Support for Dark/Light theme
+- Configuration from environment variables only
+- Stateless application without persistent storage requirements
 
-This is a good choice for simple stateless containerized applications.
 
-All configuration is handled via environment variables.
-No need for persistent storage or DB backend.
+## Installation
 
-## Project layout
+```shell
+python -m venv venv
+. .\venv\Scripts\activate
+python -m pip install --upgrade pip
 
-Layout is very simple:
-
-- app.py initializes the Flask application with login/logout workflow + light/dark theme selection
-- worker.py initializes the Celery application 
-- api.py is meant for your custom API endpoints
-- ui.py is meant for your custom UI endpoints
-- tasks.py is meant for your custom Celery tasks
+```
 
 ## Configuration
 
@@ -30,16 +45,16 @@ Just add environment variables
 
 ```shell
 # your application name
-FLASK_APP="app"
+FLASK_APP="yami"
 
 # set to 'development' or 'production'
 FLASK_ENV="development"
 
 # define LDAP credentials
 # Note: the application defaults to LDAPS without TLS certificate verification
-LDAP_HOST="dc.company.com"
+LDAP_HOST="ldap.company.com"
 LDAP_USERNAME="CN=ldap_user,DC=company,DC=com"
-LDAP_PASSWORD="Secret"
+LDAP_PASSWORD="password"
 LDAP_BASE_DN="DC=company,DC=com"
 
 # use a JSON formatted string to map roles with AD groups
@@ -49,6 +64,17 @@ LDAP_ROLES='{"admin": ["CN=admin_users"], "read-only": ["CN=read_users"]}'
 
 # REDIS setup (required by Celery)
 REDIS_URL="redis://localhost"
+
+# Cisco DNAC
+DNAC_HOST="dnac.company.com"
+DNAC_USERNAME="username"
+DNAC_PASSWORD="password"
+
+# DNS resolution
+DNS_SERVERS='["10.0.0.2","10.0.0.3"]'
+DNS_SUFFIXES='["net.company.com","company.com"]'
+
+
 ```
 
 
@@ -64,8 +90,12 @@ flask run --reload
 pip install watchdog
 watchmedo auto-restart --patterns="*.py;*.html;*.css;*.js;.env" --recursive -- flask run
 
-# star Celery worker
+# start Celery worker (Linux)
 celery -A worker worker --loglevel=INFO
+
+
+# start Celery worker (Windows)
+celery -A worker worker --pool=solo --loglevel=INFO
 ```
 
 ## Access control

@@ -40,7 +40,7 @@
                 columns: [
                     {
                         title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                            return `<b><a href=${showSwitchUrl.replace('DUMMY',row.id)}>${row.hostname}</a></b>`
+                            return `<b><a class="text-primary" href=${showSwitchUrl.replace('DUMMY',row.id)}>${row.hostname}</a></b>`
                         }
                     },
                     { title: 'IP Address', data: "ip_address" },
@@ -63,7 +63,7 @@
                             }
                         }
                     },
-                    { title: 'Stack Size', data: "stack" },
+                    { title: 'Stack Size', data: "stack_size" },
                     { title: 'Uptime (days)', data: "uptime" },
                 ]
             });

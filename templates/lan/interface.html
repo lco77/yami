@@ -17,22 +17,27 @@
             <a class="nav-link active" data-bs-toggle="tab" href="#tab1" aria-selected="true" role="tab">Summary</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab" tabindex="-1">Version</a>
+            <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab" tabindex="-1">Configuration</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
+            <a class="nav-link" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Switchport</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab4" aria-selected="false" role="tab" tabindex="-1">Statistics</a>
         </li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane fade active show" id="tab1" role="tabpanel">
             <div id="tab1-content"></div>
-            
         </div>
         <div class="tab-pane fade" id="tab2" role="tabpanel">
             <div id="tab2-content"></div>
         </div>
         <div class="tab-pane fade" id="tab3" role="tabpanel">
-            <div id="tab3-content"><table id="interfaceTable"></table></div>
+            <div id="tab3-content"></div>
+        </div>
+        <div class="tab-pane fade" id="tab4" role="tabpanel">
+            <div id="tab4-content"></div>
         </div>
     </div>
     </div>
@@ -42,94 +47,142 @@
 {% block script %}
 <script>
     const id = "{{id}}";
-    const hostname = "{{hostname}}";
-    const data = {{data|tojson}};
+    const if_name = "{{if_name}}";
+    const hostname = "{{data.hostname}}";
+    const data = JSON.parse('{{data.tojson()|safe}}');
     const pollInterval = 2000;
     const resolveDnsUrl = "{{url_for('resolve')}}";
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
     const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
     const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',id='ID',if_name='IF') }}";
+    // Tasks definitions
     const tasks = [
         {
             type: "ssh_cmd",
             params: {
-                ip_address: data.dnsResolvedManagementAddress,
-                use_textfsm: false,
+                ip_address: data.ip_address,
+                use_textfsm: true,
                 device_type: "cisco_ios",
-                cmd: "sh version"
+                cmd: `sh interface ${if_name}`
             },
             render: (result) => {
-                $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw_output|| "❌ Task failed")}</code></pre>`);
+                if (result.success) {
+                    // Summary
+                    const mappedKeys = [
+                        {interface: "Interface name"},
+                        {description: "Description"},
+                        {protocol_status: "Status"},
+                        {bandwidth: "Bandwidth"},
+                        {speed: "Speed"},
+                        {duplex: "Duplex"},
+                        {bia: "Burn-in MAC Address"},
+                        {mac_address: "MAC Address"},
+                        {media_type: "Media Type"},
+                        {hardware_type: "Hardware Type"},
+                        {mtu: "MTU"}
+                    ];
+                    const filteredRenamed = mapObjectKeys(result.parsed[0], mappedKeys);
+                    objectToTable(filteredRenamed, "#tab1-content");
+                    // Statistics
+                    const mappedKeys2 = [
+                        {input_errors: "Input errors"},
+                        {input_packets: "Input packets"},
+                        {input_pps: "Input PPS"},
+                        {input_rate: "Input rate"},
+                        {output_errors: "Output errors"},
+                        {output_packets: "Output packets"},
+                        {output_pps: "Output PPS"},
+                        {output_rate: "Output rate"},
+                        {queue_drops: "Queue drops"},
+                        {queue_flushes: "Queue flushes"},
+                        {queue_max: "Queue max"},
+                        {queue_output_drops: "Queue output drops"},
+                        {queue_size: "Queue size"},
+                        {queue_strategy: "Queue strategy"},
+                        {runts: "Runts"},
+                        {crc: "CRC"},
+                        {giants: "Giants"},
+                        {overrun: "Overrun"},
+                        {delay: "Delay"}
+
+                    ];
+                    const filteredRenamed2 = mapObjectKeys(result.parsed[0], mappedKeys2);
+                    objectToTable(filteredRenamed2, "#tab4-content");
+                } else {
+                    $("#tab1-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab4-content").html(`❌ Task failed: ${result.error}`);
+                }
             }
         },
         {
             type: "ssh_cmd",
             params: {
-                ip_address: data.dnsResolvedManagementAddress,
+                ip_address: data.ip_address,
                 use_textfsm: true,
                 device_type: "cisco_ios",
-                cmd: "sh int"
+                cmd: `sh interface ${if_name} switchport`
             },
             render: (result) => {
-                //$("#tab3-content").html(`<pre><code>${escapeHtml(result.parsed|| "❌ Task failed")}</code></pre>`);
-                if (result.parsed) {
-                $("#interfaceTable").DataTable({
-                    layout: {
-                        topStart: 'search',
-                        topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
-                    },
-                    pageLength: 25,
-                    fixedHeader: true,
-                    data: result.parsed,
-                    columns: [
-                        { title: 'Interface', data: "interface", render:function (data, type, row) {
-                            const ifLink = data.replaceAll("/", "_");
-                            return  `<b><a href=${showInterfaceUrl.replace('ID',id).replace('IF',ifLink)}>${row.interface}</a></b>`;
-                        } },
-                        { title: 'Description', data: "description" },
-                        { title: 'Status', data: "protocol_status", render:function (data, type, row) {
-                            if (data.startsWith("up")) {
-                                return `<p class="text-success">${data}</p>`;
-                            } else {
-                                return `<p class="text-danger">${data}</p>`;
-                            }
-                        } },
-                        { title: 'Speed', data: "speed" },
-                        { title: 'Duplex', data: "duplex" },
-                        { title: 'inRate', data: "input_rate" },
-                        { title: 'outRate', data: "output_rate" },
-                        { title: 'inErrors', data: "input_errors" },
-                        { title: 'outErrors', data: "output_errors" },
-                        { title: 'queueDrops', data: "queue_drops" },
-                    ]
-                });
-            } else {
-                $("#tab3-content").html("❌ Task failed");
+                if (result.success) {
+                    // Switchport
+                    const mappedKeys = [
+                        {switchport: "Switchport"},
+                        {admin_mode: "Admin Mode"},
+                        {mode: "Current Mode"},
+                        {access_vlan: "Access VLAN"},
+                        {native_vlan: "Native VLAN"},
+                        {trunking_vlans: "Trunking VLANs"},
+                        {voice_vlan: "Voice VLAN"}
+                    ];
+                    const filteredRenamed = mapObjectKeys(result.parsed[0], mappedKeys);
+                    objectToTable(filteredRenamed, "#tab3-content");
+                } else {
+                    $("#tab3-content").html(`❌ Task failed: ${result.error}`);
+                }
             }
+        },
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.ip_address,
+                use_textfsm: false,
+                device_type: "cisco_ios",
+                cmd: `sh run interface ${if_name}`
+            },
+            render: (result) => {
+                $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw|| "❌ Task failed")}</code></pre>`);
             }
         }
     ];
 
-
+    // Run tasks
     $(document).ready(function () {
-        showLanDeviceSummary(data,"#tab1-content");
         show('#spinner');
-
+        show_alert("info","Hang on",`Loading data from ${hostname}...`);
         runTasks(tasks)
         .then(updatedTasks => {
-            updatedTasks.forEach((task, i) => {
-            const selector = task.target;
-            if (task.result.error) {
-                $(selector).html("❌ " + task.result.error);
-            } else {
-                drawResult(task.result, selector);
+            console.log(updatedTasks);
+            for (const task of updatedTasks) {
+                if (task.result) {
+                    // Perform rendering if render function is defined
+                    if (typeof task.render === "function") {
+                        try {
+                            if (task.render_params !== undefined) {
+                                task.render(task.result, task.render_params);
+                            } else {
+                                task.render(task.result);
+                            }
+                        } catch (e) {
+                            console.error("Render function failed:", e);
+                        }
+                    }
+                }
             }
-            });
         })
         .finally(() => {
+            close_alert();
             hide('#spinner');
         });
-
     });
 
 </script>
