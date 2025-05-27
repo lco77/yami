@@ -92,7 +92,7 @@ app.extensions["celery"] = celery_app
 def refresh_session():
     # set default theme
     if "theme" not in session:
-        session["theme"] = "dark"
+        session["theme"] = "sandstone"
     # Check session expired
     if 'username' in session:
         now = int(time.time())
@@ -290,7 +290,7 @@ def about():
 @csrf.exempt
 def toggle_theme():
     new_theme = request.form.get("theme")
-    if new_theme in ["light", "dark"]:
+    if new_theme in ["sandstone", "darkly", "flatly", "slate","spacelab", "superhero", "cyborg", "pulse", "sketchy", "solar", "yeti", "vapor", "quartz", "brite"]:
         session["theme"] = new_theme
     return redirect(request.referrer or url_for("home"))
 

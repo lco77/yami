@@ -15,22 +15,6 @@ DNAC_PASSWORD = os.environ.get("DNAC_PASSWORD")
 
 dnac = Dnac(DNAC_HOST,DNAC_USERNAME,DNAC_PASSWORD)
 
-def uptime_to_days(uptime_str):
-    # Pattern: optional "xxx days, ", then H:MM:SS(.XX)
-    match = re.match(r'(?:(\d+)\s+days?,\s+)?(\d+):(\d+):(\d+)(?:\.\d+)?', uptime_str)
-    if not match:
-        raise ValueError(f"Invalid uptime format: {uptime_str}")
-
-    days = int(match.group(1)) if match.group(1) else 0
-    hours = int(match.group(2))
-    minutes = int(match.group(3))
-    seconds = int(match.group(4))
-
-    # Total time as timedelta
-    total_time = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
-    return total_time.days
-
-
 bp = Blueprint('api_dnac', __name__, url_prefix='/api/dnac')
 
 # get devices
@@ -44,3 +28,15 @@ async def get_devices():
         return [ device.todict() for device in data ]
     else:
         return []
+
+# get device
+@bp.route("/device/<string:id>", methods=['GET'])
+@login_required
+@cache.cached(timeout=300, key_prefix=make_key)
+@csrf.exempt
+async def get_device(id):
+    data = await dnac.get_device(id)
+    if data:
+        return data
+    else:
+        return None

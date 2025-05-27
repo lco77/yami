@@ -39,6 +39,30 @@
                 // Filter out non-onboarded devices
                 data: data.filter(device => device.hostname != null),
                 columns: [
+                {
+                        title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Synced', data: "is_sync", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Valid', data: "is_valid", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
                     {
                         title: 'Hostname', data: "hostname", render: function (data, type, row) {
                             return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC',row.fabric).replace('ID',row.uuid)}>${row.hostname}</a></b>`
@@ -77,39 +101,8 @@
                             return firstNumber;
                         }
                     },
-                    {
-                        title: 'Managed', data: "is_managed", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-                    {
-                        title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-                    {
-                        title: 'Synced', data: "is_sync", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-                    {
-                        title: 'Valid', data: "is_valid", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-
+                    { title: 'Uptime (d)', data: "uptime" },
+                    
                 ]
             });
             hide('#spinner');

@@ -10,7 +10,7 @@ import httpx
 
 
 SEMAPHORE = 10
-TIMEOUT = 10.0
+TIMEOUT = 12.0
 SESSION_LIFETIME = 1800
 
 # Utility function to convert epoch uptime

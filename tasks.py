@@ -1,17 +1,6 @@
-# import os
-# from dotenv import load_dotenv
+
 from netmiko import ConnectHandler
 from celery import Celery, shared_task 
-
-# load_dotenv()
-
-# Config
-# REDIS_URL = os.environ.get("REDIS_URL")
-# RESULT_EXPIRES = 300
-
-# Init app
-# worker = Celery('celery', broker=REDIS_URL, result_backend=REDIS_URL, task_ignore_result=False)
-# worker.conf.result_expires = RESULT_EXPIRES
 
 # hello world task
 @shared_task

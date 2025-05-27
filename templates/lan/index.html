@@ -39,11 +39,20 @@
                 data: data,
                 columns: [
                     {
+                        title: 'Reachable', data: "raw_data.communicationState", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data==="REACHABLE" ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data==="REACHABLE" ? true : false;
+                        }
+                    },
+                    {
                         title: 'Hostname', data: "hostname", render: function (data, type, row) {
                             return `<b><a class="text-primary" href=${showSwitchUrl.replace('DUMMY',row.id)}>${row.hostname}</a></b>`
                         }
                     },
                     { title: 'IP Address', data: "ip_address" },
+                    { title: 'Role', data: "role" },
                     { title: 'Version', data: "version" },
                     {
                         title: 'Model', data: "platform", render: function (data, type, row) {
@@ -64,7 +73,15 @@
                         }
                     },
                     { title: 'Stack Size', data: "stack_size" },
-                    { title: 'Uptime (days)', data: "uptime" },
+                    {
+                        title: 'Uptime (d)', data: "uptime", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return Math.floor(data / 86400);
+                            }
+                            return data;
+                        }
+                    },
+                    
                 ]
             });
             hide('#spinner');
