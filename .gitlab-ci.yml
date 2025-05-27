@@ -1,0 +1,24 @@
+image: docker:stable
+
+variables:
+  # Please only modify these two
+  PROJECT_NAME: yami
+  GROUP_NAME: nws
+  ###
+  REGISTRY_SERVER: registry.nws.straumann.com
+  CONTAINER_TAG: $REGISTRY_SERVER/$GROUP_NAME/$PROJECT_NAME:$CI_COMMIT_REF_NAME
+  CONTAINER_LATEST: $REGISTRY_SERVER/$GROUP_NAME/$PROJECT_NAME:latest
+
+before_script:
+- docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $REGISTRY_SERVER
+
+stages:
+- container-build
+
+# To build the image on tags PROD and LATEST with NO-CACHE
+container-build:
+  stage: container-build
+  script:
+    - docker build --no-cache -t "$CONTAINER_TAG" .
+    - docker tag $CONTAINER_TAG $CONTAINER_LATEST
+    - docker push "$CONTAINER_LATEST"
