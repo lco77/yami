@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Switch{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <br>
+        <h4>{{hostname}}</h4>
+        <hr>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" data-bs-toggle="tab" href="#tab1" aria-selected="true" role="tab">Summary</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab" tabindex="-1">Version</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
+        </li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane fade active show" id="tab1" role="tabpanel">
+            <div id="tab1-content">
+                <table class="table table-striped">
+                    <tr>
+                        <td><p class="text-primary"><b>Hostname</b></p></td>
+                        <td>{{data.hostname}}</td>
+                    </tr>
+                    <tr>
+                        <td><p class="text-primary"><b>IP Address</b></p></td>
+                        <td>{{data.ip_address}}</td>
+                    </tr>
+                    <tr>
+                        <td><p class="text-primary"><b>Platform</b></p></td>
+                        <td>{{data.platform}}</td>
+                    </tr>
+                    <tr>
+                        <td><p class="text-primary"><b>Serial</b></p></td>
+                        <td>{{data.serial}}</td>
+                    </tr>
+                    <tr>
+                        <td><p class="text-primary"><b>Version</b></p></td>
+                        <td>{{data.version}}</td>
+                    </tr>
+                    <tr>
+                        <td><p class="text-primary"><b>Stack size</b></p></td>
+                        <td>{{data.stack_size}}</td>
+                    </tr>
+                    <tr>
+                        <td><p class="text-primary"><b>Uptime (days)</b></p></td>
+                        <td>{{data.uptime}}</td>
+                    </tr>
+                </table>
+            </div>
+            
+        </div>
+        <div class="tab-pane fade" id="tab2" role="tabpanel">
+            <div id="tab2-content"></div>
+        </div>
+        <div class="tab-pane fade" id="tab3" role="tabpanel">
+            <div id="tab3-content"><table id="interfaceTable"></table></div>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const id = "{{id}}";
+    const hostname = "{{hostname}}";
+    const data = JSON.parse('{{data.tojson()|safe}}');
+    const pollInterval = 2000;
+    const resolveDnsUrl = "{{url_for('resolve')}}";
+    const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
+    const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
+    const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',id='ID',if_name='IF') }}";
+    // Tasks definitions
+    const tasks = [
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.ip_address,
+                use_textfsm: false,
+                device_type: "cisco_ios",
+                cmd: "sh version"
+            },
+            render: (result) => {
+                if (result.success) {
+                    $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw)}</code></pre>`);
+                } else {
+                    $("#tab2-content").html(`❌ Task failed: ${result.error}`);
+                }
+            }
+        },
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.ip_address,
+                use_textfsm: true,
+                device_type: "cisco_ios",
+                cmd: "sh int"
+            },
+            render: (result) => {
+                if (result.success) {
+                    $("#interfaceTable").DataTable({
+                        layout: {
+                            topStart: 'search',
+                            topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                        },
+                        pageLength: 15,
+                        fixedHeader: true,
+                        data: result.parsed,
+                        columns: [
+                            {
+                                title: 'Interface', data: "interface", render: function (data, type, row) {
+                                    const ifLink = data.replaceAll("/", "_");
+                                    return `<b><a class="text-primary" href=${showInterfaceUrl.replace('ID', id).replace('IF', ifLink)}>${row.interface}</a></b>`;
+                                }
+                            },
+                            { title: 'Description', data: "description" },
+                            {
+                                title: 'Status', data: "protocol_status", render: function (data, type, row) {
+                                    if (data.startsWith("up")) {
+                                        return `<p class="text-success">${data}</p>`;
+                                    } else {
+                                        return `<p class="text-danger">${data}</p>`;
+                                    }
+                                }
+                            },
+                            { title: 'Speed', data: "speed" },
+                            { title: 'Duplex', data: "duplex" },
+                            { title: 'inRate', data: "input_rate" },
+                            { title: 'outRate', data: "output_rate" },
+                            { title: 'inErrors', data: "input_errors" },
+                            { title: 'outErrors', data: "output_errors" },
+                            { title: 'queueDrops', data: "queue_drops" },
+                        ]
+                    });
+                } else {
+                    $("#tab3-content").html(`❌ Task failed: ${result.error}`);
+                }
+            }
+        }
+    ];
+
+    // Run tasks
+    $(document).ready(function () {
+        show('#spinner');
+        show_alert("info","Hang on",`Loading data from ${hostname}...`);
+        runTasks(tasks)
+        .then(updatedTasks => {
+            console.log(updatedTasks);
+            for (const task of updatedTasks) {
+                if (task.result.success) {
+                    // Perform rendering if render function is defined
+                    if (typeof task.render === "function") {
+                        try {
+                            if (task.render_params !== undefined) {
+                                task.render(task.result, task.render_params);
+                            } else {
+                                task.render(task.result);
+                            }
+                        } catch (e) {
+                            console.error("Render function failed:", e);
+                        }
+                    }
+                }
+            }
+        })
+        .finally(() => {
+            close_alert();
+            hide('#spinner');
+        });
+    });
+
+</script>
+{% endblock %}

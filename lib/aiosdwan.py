@@ -1,70 +1,22 @@
 #!/usr/bin/env python3
-"""
-Cisco Catalyst SDWAN Asynchronous Client.
-
-Tested on versions: 20.6.4 / 20.9.4 / 20.12.4
-
-This module provides an async Python client (`Vmanage`) for interacting
-with Cisco Catalyst SDWAN (vManage). It uses `httpx` for async HTTP
-requests and `asyncio` for concurrency.
-
-Example:
-    ```python
-    import asyncio
-    from aiosdwan import Vmanage
-
-    async def main():
-        # Instantiate the Vmanage client
-        vmanage = Vmanage(
-            host="vmanage.example.com",
-            username="admin",
-            password="secret",
-            verify=False
-        )
-
-        # Fetch all devices
-        devices = await vmanage.get_devices()
-        print("Devices:", devices)
-
-    asyncio.run(main())
-    ```
-"""
-
 import asyncio
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict, fields
 from ipaddress import IPv4Address, IPv4Network
 from typing import Any, Dict, List, Optional, Tuple, Union
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
 
-SEMAPHORE = 40
+SEMAPHORE = 10
+TIMEOUT = 5.0
+SESSION_LIFETIME = 1800
 
 @dataclass
 class DeviceData:
-    """
-    Represents high-level information about a Cisco Catalyst SD-WAN device.
-
-    Attributes:
-        uuid:       Unique identifier of the device.
-        persona:    Persona (e.g. vEdge, vBond, vSmart).
-        system_ip:  System IP address of the device.
-        hostname:   Hostname of the device.
-        site_id:    Logical site ID associated with the device.
-        model:      Hardware or virtual model name.
-        version:    Software version of the device.
-        template_id:    Template ID to which the device is attached.
-        template_name:  Template name to which the device is attached.
-        is_managed: Flag indicating whether the device is managed.
-        is_valid:   Flag indicating if the device is considered "valid."
-        is_sync:    Flag indicating configuration sync status.
-        is_reachable: Flag indicating reachability status.
-        raw_data:   Raw JSON data returned from vManage.
-        latitude:   Latitude for mapping/geo display.
-        longitude:  Longitude for mapping/geo display.
-    """
     uuid: str
+    fabric: str
     persona: str
     system_ip: Optional[IPv4Address]
     hostname: Optional[str]
@@ -81,22 +33,22 @@ class DeviceData:
     latitude: float = 0.0
     longitude: float = 0.0
 
+    def todict(self):
+        result = {}
+        for field in fields(self):
+            value = getattr(self, field.name)
+            # Serialize IPv4Address to string
+            if isinstance(value, IPv4Address):
+                result[field.name] = str(value)
+            else:
+                result[field.name] = value
+        return result
+
+    def tojson(self):
+        return json.dumps(self.todict())
 
 @dataclass
 class InterfaceData:
-    """
-    Represents interface information for a device.
-
-    Attributes:
-        if_name:  Interface name (e.g., GigabitEthernet0/0).
-        if_desc:  Description configured on the interface.
-        if_type:  Type of the interface (e.g., ethernet, loopback).
-        if_mac:   MAC address of the interface.
-        vpn_id:   VPN or VRF ID.
-        ip:       IPv4 address for the interface.
-        network:  IPv4 network (address + subnet mask).
-        raw_data: Raw JSON data returned from vManage.
-    """
     if_name: str
     if_desc: str
     if_type: str
@@ -109,18 +61,6 @@ class InterfaceData:
 
 @dataclass
 class VrrpData:
-    """
-    Represents VRRP (Virtual Router Redundancy Protocol) configuration on a device.
-
-    Attributes:
-        if_name:  Interface name running VRRP.
-        group:    VRRP group number.
-        priority: Priority of the VRRP instance.
-        preempt:  Preemption enabled or not.
-        master:   Whether the device is currently the master.
-        ip:       VRRP virtual IP address.
-        raw_data: Raw JSON data returned from vManage.
-    """
     if_name: str
     group: int
     priority: int
@@ -132,20 +72,6 @@ class VrrpData:
 
 @dataclass
 class TlocData:
-    """
-    Represents TLOC (Transport Locator) information used in SD-WAN for data forwarding.
-
-    Attributes:
-        site_id:      Site ID associated with the device.
-        system_ip:    System IP of the device.
-        private_ip:   Private IP address used for TLOC.
-        public_ip:    Public IP address used for TLOC.
-        preference:   Preference value for TLOC path selection.
-        weight:       Weight value for TLOC path selection.
-        encapsulation: Encapsulation type (e.g., ipsec, gre).
-        color:        Color attribute assigned to the TLOC (e.g., biz-internet).
-        raw_data:     Raw JSON data returned from vManage.
-    """
     site_id: int
     system_ip: IPv4Address
     private_ip: IPv4Address
@@ -158,23 +84,6 @@ class TlocData:
 
 
 class Vmanage:
-    """
-    Asynchronous client for interacting with Cisco Catalyst SD-WAN (vManage).
-
-    This class handles:
-    - Authentication to vManage
-    - Asynchronous GET/POST calls via httpx
-    - Retrieval of device, interface, TLOC, and VRRP data
-
-    Attributes:
-        base_url:   Base URL for the vManage instance (including protocol and port).
-        semaphore:  Maximum concurrency limit for async tasks.
-        verify:     Whether to verify SSL certificates.
-        connected:  Flag indicating successful login.
-        session:    httpx.AsyncClient() used for async calls after successful login.
-        headers:    HTTP headers containing session cookie and CSRF token.
-    """
-
     def __init__(
         self,
         host: str,
@@ -183,8 +92,7 @@ class Vmanage:
         verify: bool = False,
         port: int = 443,
         semaphore: asyncio.Semaphore = None,
-        timeout:float = 10.0,
-        debug: bool = False
+        timeout:float = TIMEOUT
     ):
         """
         Initialize the Vmanage client and attempt an immediate login.
@@ -198,10 +106,13 @@ class Vmanage:
             semaphore: Max number of concurrent requests (default: 40).
             debug:     If True, print additional debug information (not currently used).
         """
+        self.host = host
         self.base_url = f"https://{host}:{port}"
         self.verify = verify
         self.username = username
         self.password = password
+        self.token_time = None
+        self.timeout = timeout
         self.session: Optional[httpx.AsyncClient] = None
         if semaphore is None:
             self.semaphore = asyncio.Semaphore(SEMAPHORE)
@@ -209,7 +120,7 @@ class Vmanage:
             self.semaphore = semaphore
 
 
-    async def connect(self) -> bool:
+    def connect(self) -> bool:
         """
         Perform synchronous login to obtain session cookie and CSRF token.
 
@@ -223,13 +134,17 @@ class Vmanage:
         Raises:
             ConnectionError: If a networking error occurs during login.
         """
-        client = httpx.AsyncClient(verify=self.verify)
+        # check if a valid token is set
+        if self.token_time is not None and (datetime.now(timezone.utc) - self.token_time) < timedelta(seconds=SESSION_LIFETIME):
+            return True
+        
+        #client = httpx.AsyncClient(verify=self.verify)
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         data = {"j_username": self.username, "j_password": self.password}
 
         # Attempt the POST to j_security_check
         try:
-            response = await client.post(f"{self.base_url}/j_security_check", data=data, headers=headers)
+            response = httpx.post(f"{self.base_url}/j_security_check", data=data, headers=headers, verify=self.verify)
         except httpx.HTTPError as exc:
             raise ConnectionError(f"ConnectionError during login: {exc}") from exc
 
@@ -249,50 +164,34 @@ class Vmanage:
 
             # Retrieve CSRF token
             try:
-                token_resp = await client.get(f"{self.base_url}/dataservice/client/token", headers=self.headers)
+                token_resp = httpx.get(f"{self.base_url}/dataservice/client/token", headers=self.headers, verify=self.verify)
             except httpx.HTTPError as exc:
                 raise ConnectionError(f"ConnectionError fetching CSRF token: {exc}") from exc
 
             if token_resp.status_code == 200:
+                self.token_time = datetime.now(timezone.utc)
                 self.headers["X-XSRF-TOKEN"] = token_resp.text.strip()
                 # Update base_url to /dataservice for subsequent calls
                 self.base_url = f"{self.base_url}/dataservice"
-                self.session = client
+                #self.session = client
                 return True
         return False
 
-    async def __get(self, path: str, params: Dict[str, Any] = None) -> Optional[str]:
-        """
-        Internal helper for asynchronous GET requests.
-
-        Args:
-            path:   The API endpoint path (appended to base_url).
-            params: Optional query parameters.
-
-        Returns:
-            The response body (str) if status_code == 200, otherwise None.
-
-        Raises:
-            ConnectionError: If a networking error occurs.
-        """
-        if not self.session:
+    async def _get(self, path: str, params: Dict[str, Any] = None) -> Optional[str]:
+        if not self.connect():
             return None
 
         params = params or {}
         try:
-            response = await self.session.get(
-                f"{self.base_url}{path}",
-                headers=self.headers,
-                params=params,
-                timeout=None
-            )
-            if response.status_code == 200:
-                return response.text
-            return None
+            async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
+                response = await client.get(f"{self.base_url}{path}", params=params)
+                if response.status_code == 200:
+                    return response.text
+                return None
         except httpx.HTTPError as exc:
             raise ConnectionError(f"ConnectionError on GET {path}: {exc}") from exc
 
-    async def __post(
+    async def _post(
         self,
         path: str,
         params: Dict[str, Any] = None,
@@ -312,23 +211,18 @@ class Vmanage:
         Raises:
             ConnectionError: If a networking error occurs.
         """
-        if not self.session:
+        if not self.connect():
             return None
 
         params = params or {}
         data = data or {}
 
         try:
-            response = await self.session.post(
-                f"{self.base_url}{path}",
-                headers=self.headers,
-                params=params,
-                data=json.dumps(data),
-                timeout=None
-            )
-            if response.status_code == 200:
-                return response.text
-            return None
+            async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
+                response = await client.post(f"{self.base_url}{path}", params=params, data=json.dumps(data))
+                if response.status_code == 200:
+                    return response.text
+                return None
         except httpx.HTTPError as exc:
             raise ConnectionError(f"ConnectionError on POST {path}: {exc}") from exc
 
@@ -345,7 +239,7 @@ class Vmanage:
             or None if the request or JSON parsing fails.
         """
         params = params or {}
-        response_text = await self.__get(endpoint, params=params)
+        response_text = await self._get(endpoint, params=params)
         if not response_text:
             return None
 
@@ -376,7 +270,7 @@ class Vmanage:
         """
         params = params or {}
         data = data or {}
-        response_text = await self.__post(endpoint, params=params, data=data)
+        response_text = await self._post(endpoint, params=params, data=data)
         if not response_text:
             return None
 
@@ -441,6 +335,7 @@ class Vmanage:
             system_ip = info.get("system-ip")
             devices[uuid_key] = DeviceData(
                 uuid=info["uuid"],
+                fabric=self.host,
                 persona=info.get("personality", ""),
                 system_ip=IPv4Address(system_ip) if system_ip else None,
                 hostname=info.get("host-name"),

@@ -113,20 +113,6 @@ function resolve_hostname(name) {
     });
   }
 
-  
-// Resolve a DNS name (legacy)
-function resolve(resolveUrl, name, statusDiv) {
-    fetch(resolveUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name })
-    })
-        .then(res => res.json())
-        .catch(err => {
-            statusDiv.innerText = "Error resolving: " + err;
-        });
-}
-
 // Start a background task
 function createTask(url, type, data) {
     return fetch(url, {
@@ -165,8 +151,6 @@ function pollTask(getTaskUrl, taskId, pollInterval, statusSelector) {
                     } else if (task.status === "FAILURE") {
                         clearInterval(poll);
                         reject("Task failed");
-                    } else {
-                        $(statusSelector).html(`🔍 Task status: ${task.status}`);
                     }
                 })
                 .catch(err => {
@@ -207,11 +191,3 @@ async function runTasks(tasks) {
     return updatedTasks;
   }
   
-  
-// Escape raw output for HTML display
-function escapeHtml(str) {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-}

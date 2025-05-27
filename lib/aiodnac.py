@@ -6,6 +6,7 @@ from dataclasses import dataclass, asdict, field
 from datetime import datetime, timedelta, timezone
 
 TIMEOUT = 5.0
+SESSION_LIFETIME = 3600
 
 # helper function to convert uptime in days
 def uptime_to_days(uptime_str):
@@ -52,7 +53,7 @@ class Dnac:
 
     def connect(self)->bool:
         # check if a valid token is set
-        if self.token_time is not None and (datetime.now(timezone.utc) - self.token_time) < timedelta(seconds=3600):
+        if self.token_time is not None and (datetime.now(timezone.utc) - self.token_time) < timedelta(seconds=SESSION_LIFETIME):
             return True
         # otherwise proceed with authentication
         r = httpx.post(

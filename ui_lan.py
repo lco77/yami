@@ -46,7 +46,7 @@ async def show_device(id):
     return render_template("lan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data)
 
 # LAN device interface page
-@bp.route('/<string:id>/<string:if_name>', methods=['GET'])
+@bp.route('/<string:id>/interface/<string:if_name>', methods=['GET'])
 @login_required
 async def show_interface(id,if_name):
     if_name = if_name.replace("_","/")

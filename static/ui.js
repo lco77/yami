@@ -1,5 +1,11 @@
 
-
+// Escape raw output for HTML display
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
 
 // render a table from an object
 function objectToTable(obj, selector) {

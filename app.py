@@ -346,11 +346,17 @@ app.register_blueprint(api_tasks.bp)
 import api_dnac
 app.register_blueprint(api_dnac.bp)
 
+# API SDWAN blueprint
+import api_sdwan
+app.register_blueprint(api_sdwan.bp)
 
-# UI Base blueprint
+# UI LAN blueprint
 import ui_lan
 app.register_blueprint(ui_lan.bp)
 
+# UI SDWAN blueprint
+import ui_sdwan
+app.register_blueprint(ui_sdwan.bp)
 
 
 
