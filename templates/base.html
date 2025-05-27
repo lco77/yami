@@ -16,6 +16,9 @@
   <title>{% block title %}{% endblock %}</title>
 
   <!-- Theme -->
+   {% if not theme %}
+   <link id="theme-style" rel="stylesheet" href="{{ url_for('static',filename='css/sandstone.min.css')}}">
+   {% endif %}
   <link id="theme-style" rel="stylesheet" href="{{ url_for('static',filename='css/{}.min.css'.format(theme))}}">
 
   <!-- Bootstrap -->
