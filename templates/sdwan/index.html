@@ -54,7 +54,7 @@
                             if (type === 'display') {
                                 return data.controlConnections===undefined ? "--" : data.controlConnections
                             }
-                            return data.controlConnections===undefined ? null : data.controlConnections
+                            return data.controlConnections===undefined ? null : parseInt(data.controlConnections,10)
                         }
                     },
                     {

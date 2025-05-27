@@ -219,26 +219,20 @@ def ldap_login(username: str, password: str) -> User:
     for role_name,role_groups in ROLES.items():
         for role_group in role_groups:
             for user_group in member_of:
-                if user_group.startswith(role_group):
+                # Caution! This assumes group CN uniqueness in the directory
+                if user_group.startswith(f'CN={role_group},'):
                     user_roles.add(role_name)
 
-    # Reject login if user has no role
-    if user_roles == set():
-        return User(
-            authenticated = False,
-            username = username
-        )
-    else:
-        return User(
-            authenticated = True,
-            username = username,
-            password = password,
-            dn = user_dn,
-            fullname = fullname,
-            firstname = firstname,
-            email = email,
-            roles = list(user_roles)
-        )
+    return User(
+        authenticated = False if user_roles == set() else True,
+        username = username,
+        password = password,
+        dn = user_dn,
+        fullname = fullname,
+        firstname = firstname,
+        email = email,
+        roles = list(user_roles)
+    )
 
 # Login route
 @app.route('/login', methods=['GET', 'POST'])

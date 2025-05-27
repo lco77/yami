@@ -44,12 +44,13 @@ function timeToSeconds(timeStr) {
 
   // Text format (e.g. 16w1d, 1d04h)
   let total = 0;
-  const regex = /(\d+)([wdhms])/g;
+  const regex = /(\d+)([ywdhms])/g;
   let match;
   while ((match = regex.exec(timeStr)) !== null) {
     const value = parseInt(match[1], 10);
     const unit = match[2];
     switch (unit) {
+      case 'y': total += value * 52 * 7 * 24 * 3600; break;
       case 'w': total += value * 7 * 24 * 3600; break;
       case 'd': total += value * 24 * 3600; break;
       case 'h': total += value * 3600; break;
@@ -59,4 +60,34 @@ function timeToSeconds(timeStr) {
   }
 
   return total;
+}
+
+//parse "show int link" output
+function parseShIntLink(rawText) {
+  const lines = rawText.trim().split('\n');
+
+  // Remove the header line and grab column positions from it
+  const headerLine = lines.shift();
+  const portCol = headerLine.indexOf('Port');
+  const nameCol = headerLine.indexOf('Name');
+  const downCol = headerLine.indexOf('Down Time');
+  const upCol = headerLine.indexOf('Up Time');
+
+  const data = [];
+
+  for (const line of lines) {
+    const port = line.substring(portCol, nameCol).trim();
+    const name = line.substring(nameCol, downCol).trim();
+    const downTime = line.substring(downCol, upCol).trim();
+    const upTime = line.substring(upCol).trim();
+
+    data.push({
+      port,
+      name,
+      down_time: downTime,
+      up_time: upTime
+    });
+  }
+
+  return data;
 }

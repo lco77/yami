@@ -49,6 +49,6 @@ async def get_devices():
     data_cn = await sdwan_cn.get_devices()
     data = data_ww | data_cn
     if data:
-        return [ device.todict() for uuid,device in data.items() ]
+        return [ device.todict() for uuid,device in data.items() if device.hostname is not None ]
     else:
         return []

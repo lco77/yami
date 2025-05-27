@@ -162,12 +162,18 @@
             type: "ssh_cmd",
             params: {
                 ip_address: data.ip_address,
-                use_textfsm: true,
+                use_textfsm: false,
                 device_type: deviceType,
                 cmd: "sh int link"
             },
             render: (result) => {
                 if (result.success) {
+                    const parsed = parseShIntLink(result.raw).map(row => ({
+                        ...row,
+                        up_time_seconds: timeToSeconds(row.up_time),
+                        down_time_seconds: timeToSeconds(row.down_time)
+                    }));
+                    console.log(parsed);
                     $("#portUptimeTable").DataTable({
                         layout: {
                             topStart: 'search',
@@ -175,32 +181,30 @@
                         },
                         pageLength: 15,
                         fixedHeader: true,
-                        data: result.parsed,
+                        data: parsed,
                         columns: [
                             { title: 'Port', data: "port" },
                             {
-                                title: 'Uptime', data: "uptime", render: function (data, type, row) {
-                                    console.log(data);
+                                title: 'Uptime', data: "up_time", render: function (data, type, row) {
                                     if (type === 'display') {
                                         return data;
                                     }
-                                    return timeToSeconds(data);
+                                    return row.up_time_seconds===undefined ? null : parseInt(row.up_time_seconds,10);
                                 }
                             },
                             {
-                                title: 'Downtime', data: "downtime", render: function (data, type, row) {
-                                    console.log(data);
+                                title: 'Downtime', data: "down_time", render: function (data, type, row) {
                                     if (type === 'display') {
                                         return data;
                                     }
-                                    return timeToSeconds(data);
+                                    return row.down_time_seconds==undefined ? null : parseInt(row.down_time_seconds,10);
                                 }
                             },
                         ]
                     });
                     $("#portUptimeNav").show();
                 } else {
-                    $("#tab3-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab4-content").html(`❌ Task failed: ${result.error}`);
                 }
             }
         });
@@ -223,31 +227,6 @@
             close_alert();
             hide("#spinner");
         });
-
-        //runTasks(tasks)
-        //.then(updatedTasks => {
-        //    console.log(updatedTasks);
-        //    for (const task of updatedTasks) {
-        //        if (task.result.success) {
-        //            // Perform rendering if render function is defined
-        //            if (typeof task.render === "function") {
-        //                try {
-        //                    if (task.render_params !== undefined) {
-        //                        task.render(task.result, task.render_params);
-        //                    } else {
-        //                        task.render(task.result);
-        //                    }
-        //                } catch (e) {
-        //                    console.error("Render function failed:", e);
-        //                }
-        //            }
-        //        }
-        //    }
-        //})
-        //.finally(() => {
-        //    close_alert();
-        //    hide('#spinner');
-        //});
     });
 
 </script>
