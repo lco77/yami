@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Switch{% endblock %}
+{% block title %}Yami{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -49,18 +49,19 @@
     const id = "{{id}}";
     const if_name = "{{if_name}}";
     const hostname = "{{data.hostname}}";
+    const fabric = "{{fabric}}";
     const data = JSON.parse('{{data.tojson()|safe}}');
     const pollInterval = 2000;
     const resolveDnsUrl = "{{url_for('resolve')}}";
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
     const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
-    const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',id='ID',if_name='IF') }}";
+    const showInterfaceUrl = "{{ url_for('ui_sdwan.show_interface',fabric='FABRIC',id='ID',if_name='IF') }}";
     // Tasks definitions
     const tasks = [
         {
             type: "ssh_cmd",
             params: {
-                ip_address: data.ip_address,
+                ip_address: data.system_ip,
                 use_textfsm: true,
                 device_type: "cisco_ios",
                 cmd: `sh interface ${if_name}`
@@ -117,7 +118,7 @@
         {
             type: "ssh_cmd",
             params: {
-                ip_address: data.ip_address,
+                ip_address: data.system_ip,
                 use_textfsm: true,
                 device_type: "cisco_ios",
                 cmd: `sh interface ${if_name} switchport`
@@ -144,7 +145,7 @@
         {
             type: "ssh_cmd",
             params: {
-                ip_address: data.ip_address,
+                ip_address: data.system_ip,
                 use_textfsm: false,
                 device_type: "cisco_ios",
                 cmd: `sh run interface ${if_name}`

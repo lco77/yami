@@ -42,6 +42,7 @@ LDAP_PASSWORD = os.environ.get("LDAP_PASSWORD")
 
 # Application roles to LDAP groups mappings
 ROLES = json.loads(os.environ.get("LDAP_ROLES"))
+print(f'ROLES={ROLES}')
 
 # Session timeout
 SESSION_TIMEOUT_SECONDS = 3600*12
@@ -221,17 +222,23 @@ def ldap_login(username: str, password: str) -> User:
                 if user_group.startswith(role_group):
                     user_roles.add(role_name)
 
-
-    return User(
-        authenticated = True,
-        username = username,
-        password = password,
-        dn = user_dn,
-        fullname = fullname,
-        firstname = firstname,
-        email = email,
-        roles = list(user_roles)
-    )
+    # Reject login if user has no role
+    if user_roles == set():
+        return User(
+            authenticated = False,
+            username = username
+        )
+    else:
+        return User(
+            authenticated = True,
+            username = username,
+            password = password,
+            dn = user_dn,
+            fullname = fullname,
+            firstname = firstname,
+            email = email,
+            roles = list(user_roles)
+        )
 
 # Login route
 @app.route('/login', methods=['GET', 'POST'])
@@ -332,6 +339,10 @@ def home():
     link_map = {
         "LAN": {
             "text": "View and operate LAN switches",
+            "url": url_for('ui_lan.index')
+        },
+        "SDWAN": {
+            "text": "View and operate SDWAN routers",
             "url": url_for('ui_lan.index')
         }
 

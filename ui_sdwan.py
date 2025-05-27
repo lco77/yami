@@ -52,7 +52,7 @@ async def show_device(fabric,id):
             return jsonify({"error": f"Invalid device {id}"}), 400
     except Exception as err:
         return jsonify({"error": str(err)}), 400
-    return render_template("sdwan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data)
+    return render_template("sdwan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data, fabric=fabric)
 
 # LAN device interface page
 @bp.route('/<string:fabric>/<string:id>/interface/<string:if_name>', methods=['GET'])
@@ -75,4 +75,4 @@ async def show_interface(fabric,id,if_name):
             return jsonify({"error": f"Invalid device {id}"}), 400
     except Exception as err:
         return jsonify({"error": str(err)}), 400
-    return render_template("sdwan/interface.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data, if_name=if_name)
+    return render_template("sdwan/interface.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data, if_name=if_name, fabric=fabric)

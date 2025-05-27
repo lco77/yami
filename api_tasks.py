@@ -25,16 +25,22 @@ def create_task():
     match task_type:
         # Hello task
         case "hello":
-            result = hello.delay(task_data)
+            result = hello.apply_async(
+                kwargs = task_data,
+                headers = { "owner": user.username }
+            )
         # ssh_cmd
         case "ssh_cmd":
-            result = run_ssh_command.delay(
-                username = user.username,
-                password = user.password,
-                host = task_data.get("ip_address"),
-                command = task_data.get("cmd"),
-                device_type = task_data.get("device_type"),
-                use_textfsm = task_data.get("use_textfsm",False)
+            result = run_ssh_command.apply_async(
+                kwargs = {
+                    "username": user.username,
+                    "password": user.password,
+                    "host": task_data.get("ip_address"),
+                    "command": task_data.get("cmd"),
+                    "device_type": task_data.get("device_type"),
+                    "use_textfsm": task_data.get("use_textfsm",False)
+                },
+                headers = { "owner": user.username }
             )
 
     return jsonify({"task_id": result.id}), 202
@@ -45,6 +51,7 @@ def create_task():
 @csrf.exempt
 def get_task(task_id):
     result = AsyncResult(task_id)
+
     response = {
         "task_id": task_id,
         "status": result.status,

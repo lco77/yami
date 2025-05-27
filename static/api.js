@@ -163,8 +163,8 @@ function pollTask(getTaskUrl, taskId, pollInterval, statusSelector) {
 
 
 
-// runTasks
-async function runTasks(tasks) {
+// runTasks - sequential
+async function runTasksSeq(tasks) {
     const updatedTasks = [];
   
     for (const task of tasks) {
@@ -190,4 +190,28 @@ async function runTasks(tasks) {
   
     return updatedTasks;
   }
-  
+
+// runTasks - parallel
+async function runTasks(tasks) {
+  const promises = tasks.map(async (task) => {
+    const taskCopy = { ...task };
+
+    try {
+      const taskId = await createTask(createTaskUrl, task.type, task.params);
+
+      if (!taskId) {
+        taskCopy.result = { success: false, error: "Task creation failed" };
+      } else {
+        const taskResult = await pollTask(getTaskUrl, taskId, pollInterval);
+        taskCopy.result = taskResult;
+      }
+    } catch (error) {
+      taskCopy.result = { success: false, error: String(error) };
+    }
+
+    return taskCopy;
+  });
+
+  // Wait for all tasks to complete
+  return Promise.all(promises);
+}

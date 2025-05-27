@@ -14,6 +14,15 @@ from api_dnac import dnac
 
 bp = Blueprint('ui_lan', __name__, url_prefix='/ui/lan')
 
+# infer device type from platform
+def check_device_type(platform:list[str])->str:
+    match = ['N5K', 'N7K', 'N9K']
+    found = any(item.startswith(prefix) for item in platform for prefix in match)
+    if found:
+        return "cisco_nxos_ssh"
+    else:
+        return "cisco_ios"
+
 # DeviceForm
 class DeviceForm(FlaskForm):
     hostname = StringField('Hostname', validators=[DataRequired()])
@@ -41,9 +50,10 @@ async def show_device(id):
         r = await dnac.get_devices({"id":[id]})
         data = r[0]
         hostname = data.hostname
+        device_type = check_device_type(data.platform)
     except Exception as err:
         return jsonify({"error": str(err)}), 400
-    return render_template("lan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data)
+    return render_template("lan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data)
 
 # LAN device interface page
 @bp.route('/<string:id>/interface/<string:if_name>', methods=['GET'])
@@ -55,6 +65,7 @@ async def show_interface(id,if_name):
         r = await dnac.get_devices({"id":[id]})
         data = r[0]
         hostname = data.hostname
+        device_type = check_device_type(data.platform)
     except Exception as err:
         return jsonify({"error": str(err)}), 400
-    return render_template("lan/interface.html", user=user, theme=session["theme"], id=id, hostname=hostname, data=data, if_name=if_name)
+    return render_template("lan/interface.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data, if_name=if_name)

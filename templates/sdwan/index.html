@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}LAN{% endblock %}
+{% block title %}Yami{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col">
         <br>
-        <h4>LAN</h4>
+        <h4>SDWAN</h4>
         <hr>
     </div>
 </div>
 
 <div class="row">
     <div class="col">
-        <table id="table"  class="table align-top"></table>
+        <table id="table"  class="table table-striped align-top"></table>
     </div>
 </div>
 
@@ -22,12 +22,12 @@
 
 {% block script %}
 <script>
-    const getSwitchesUrl = "{{ url_for('api_dnac.get_devices') }}";
-    const showSwitchUrl = "{{ url_for('ui_lan.show_device',id='DUMMY') }}";
+    const getDevicesUrl = "{{ url_for('api_sdwan.get_devices') }}";
+    const showDeviceUrl = "{{ url_for('ui_sdwan.show_device',fabric='FABRIC',id='ID') }}";
     // get data and render table
     $(document).ready(function () {
         show('#spinner');
-        get(getSwitchesUrl + "?family=Switches and Hubs")
+        get(getDevicesUrl)
         .then(data=> {
             $('#table').DataTable({
                 layout: {
@@ -36,41 +36,86 @@
                 },
                 pageLength: 10,
                 fixedHeader: true,
-                data: data,
+                // Filter out non-onboarded devices
+                data: data.filter(device => device.hostname != null),
                 columns: [
                     {
                         title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                            return `<b><a class="text-primary" href=${showSwitchUrl.replace('DUMMY',row.id)}>${row.hostname}</a></b>`
+                            return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC',row.fabric).replace('ID',row.uuid)}>${row.hostname}</a></b>`
                         }
                     },
-                    { title: 'IP Address', data: "ip_address" },
+                    { title: 'IP Address', data: "system_ip" },
                     { title: 'Version', data: "version" },
+                    { title: 'Model', data: "model" },
+                    { title: 'Persona', data: "persona" },
+                    { title: 'Fabric', data: "fabric" },
                     {
-                        title: 'Model', data: "platform", render: function (data, type, row) {
-                            if (data) {
-                                return data.join('<br>');
-                            } else {
-                                return null;
+                        title: 'CTRL', data: "raw_data", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data.controlConnections===undefined ? "--" : data.controlConnections
                             }
+                            return data.controlConnections===undefined ? null : data.controlConnections
                         }
                     },
                     {
-                        title: 'Serial', data: "serial", render: function (data, type, row) {
-                            if (data) {
-                                return data.join('<br>');
-                            } else {
-                                return null;
+                        title: 'BFD', data: "raw_data", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data.bfdSessions===undefined ? "--" : data.bfdSessions
                             }
+                            const match = data.bfdSessions===undefined ? null:data.bfdSessions.match(/^\d+/);
+                            const firstNumber = match ? parseInt(match[0], 10) : null;
+                            return firstNumber;
                         }
                     },
-                    { title: 'Stack Size', data: "stack_size" },
-                    { title: 'Uptime (days)', data: "uptime" },
+                    {
+                        title: 'OMP', data: "raw_data", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data.ompPeers===undefined ? "--" : data.ompPeers;
+                            }
+                            const match = data.ompPeers===undefined ? null:data.ompPeers.match(/^\d+/);
+                            const firstNumber = match ? parseInt(match[0], 10) : null;
+                            return firstNumber;
+                        }
+                    },
+                    {
+                        title: 'Managed', data: "is_managed", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Synced', data: "is_sync", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Valid', data: "is_valid", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                            }
+                            return data;
+                        }
+                    },
+
                 ]
             });
             hide('#spinner');
         })
         .catch(error=>{
-            show_alert("danger","Failed to contact Cisco DNAC",error)
+            show_alert("danger","Failed to contact Cisco SDWAN",error)
             hide('#spinner');
             console.log(error);
         });

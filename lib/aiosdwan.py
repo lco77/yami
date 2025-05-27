@@ -13,6 +13,17 @@ SEMAPHORE = 10
 TIMEOUT = 5.0
 SESSION_LIFETIME = 1800
 
+# Utility function to convert epoch uptime
+def ms_to_uptime_days(ms):
+    try:
+        ts = int(ms) / 1000
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        now = datetime.now(timezone.utc)
+        uptime = now - dt
+        return uptime.days
+    except:
+        return None
+    
 @dataclass
 class DeviceData:
     uuid: str
@@ -32,6 +43,7 @@ class DeviceData:
     raw_data: Dict[str, Any]
     latitude: float = 0.0
     longitude: float = 0.0
+    uptime: str = None
 
     def todict(self):
         result = {}
@@ -333,8 +345,14 @@ class Vmanage:
         for uuid_key, info in merged.items():
             # Defensive gets in case keys are missing
             system_ip = info.get("system-ip")
+            # compute uptime
+            if "uptime-date" in info:
+                uptime = ms_to_uptime_days(int(info.get("uptime-date")))
+            else:
+                uptime = None
             devices[uuid_key] = DeviceData(
                 uuid=info["uuid"],
+                uptime=uptime,
                 fabric=self.host,
                 persona=info.get("personality", ""),
                 system_ip=IPv4Address(system_ip) if system_ip else None,

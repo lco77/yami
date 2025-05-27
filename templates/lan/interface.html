@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Switch{% endblock %}
+{% block title %}Yami{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -49,6 +49,7 @@
     const id = "{{id}}";
     const if_name = "{{if_name}}";
     const hostname = "{{data.hostname}}";
+    const deviceType = "{{device_type}}";
     const data = JSON.parse('{{data.tojson()|safe}}');
     const pollInterval = 2000;
     const resolveDnsUrl = "{{url_for('resolve')}}";
@@ -62,7 +63,7 @@
             params: {
                 ip_address: data.ip_address,
                 use_textfsm: true,
-                device_type: "cisco_ios",
+                device_type: deviceType,
                 cmd: `sh interface ${if_name}`
             },
             render: (result) => {
@@ -119,7 +120,7 @@
             params: {
                 ip_address: data.ip_address,
                 use_textfsm: true,
-                device_type: "cisco_ios",
+                device_type: deviceType,
                 cmd: `sh interface ${if_name} switchport`
             },
             render: (result) => {
@@ -146,7 +147,7 @@
             params: {
                 ip_address: data.ip_address,
                 use_textfsm: false,
-                device_type: "cisco_ios",
+                device_type: deviceType,
                 cmd: `sh run interface ${if_name}`
             },
             render: (result) => {
