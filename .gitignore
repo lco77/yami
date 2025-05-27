@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.gitlab-ci.yml
 
 # C extensions
 *.so
