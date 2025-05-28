@@ -9,7 +9,7 @@ from wtforms.validators import DataRequired
 
 
 from app import login_required, roles_required, read_user_from_session
-from api_sdwan import sdwan_ww, sdwan_cn
+from api_sdwan import sdwan
 
 
 bp = Blueprint('ui_sdwan', __name__, url_prefix='/ui/sdwan')
@@ -30,7 +30,7 @@ class Device:
 @login_required
 async def index():
     user = read_user_from_session(session)
-    return render_template("sdwan/index.html", user=user, theme=session["theme"])
+    return render_template("sdwan/index.html", user=user, theme=session["theme"], fabrics=list(sdwan.keys()))
 
 # SDWAN device page
 @bp.route('/<string:fabric>/<string:id>', methods=['GET'])
@@ -38,13 +38,9 @@ async def index():
 async def show_device(fabric,id):
     user = read_user_from_session(session)
     try:
-        match fabric:
-            case sdwan_ww.host:
-                r = await sdwan_ww.get_devices()
-            case sdwan_cn.host:
-                r = await sdwan_cn.get_devices()
-            case _:
-                return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+        if not fabric in sdwan.keys():
+            return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+        r = await sdwan[fabric].get_devices()
         if id in r.keys():
             data = r[id]
             hostname = data.hostname
@@ -61,13 +57,9 @@ async def show_interface(fabric,id,if_name):
     if_name = if_name.replace("_","/")
     user = read_user_from_session(session)
     try:
-        match fabric:
-            case sdwan_ww.host:
-                r = await sdwan_ww.get_devices()
-            case sdwan_cn.host:
-                r = await sdwan_cn.get_devices()
-            case _:
-                return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+        if not fabric in sdwan.keys():
+            return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+        r = await sdwan[fabric].get_devices()
         if id in r.keys():
             data = r[id]
             hostname = data.hostname

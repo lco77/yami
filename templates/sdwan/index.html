@@ -6,14 +6,23 @@
 <div class="row">
     <div class="col">
         <br>
-        <h4>SDWAN</h4>
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">SDWAN</h4>
+            <div id="fabric-buttons" class="btn-group" role="group" aria-label="Fabric selection">
+                {% for item in fabrics %}
+                <button type="button" class="btn btn-outline-primary fabric-btn" data-fabric="{{ item }}">
+                    {{ item }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
         <hr>
     </div>
 </div>
 
 <div class="row">
     <div class="col">
-        <table id="table"  class="table table-striped align-top"></table>
+        <table id="table" class="table table-striped align-top"></table>
     </div>
 </div>
 
@@ -22,96 +31,128 @@
 
 {% block script %}
 <script>
-    const getDevicesUrl = "{{ url_for('api_sdwan.get_devices') }}";
-    const showDeviceUrl = "{{ url_for('ui_sdwan.show_device',fabric='FABRIC',id='ID') }}";
+    const test = '{{fabrics|tojson}}';
+    let fabric = "{{ fabrics[0] }}"; // default to first fabric
+    let getDevicesUrl = "{{ url_for('api_sdwan.get_devices',fabric='FABRIC') }}";
+    let showDeviceUrl = "{{ url_for('ui_sdwan.show_device',fabric='FABRIC',id='ID') }}";
+    // init table
+    let table = new DataTable('#table',
+        {
+            layout: {
+                topStart: 'search',
+                topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+            },
+            pageLength: 10,
+            fixedHeader: true,
+            order: [[3, 'asc']],
+            // Filter out non-onboarded devices
+            columns: [
+                {
+                    title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
+                        if (type === 'display') {
+                            return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                        }
+                        return data;
+                    }
+                },
+                {
+                    title: 'Synced', data: "is_sync", render: function (data, type, row) {
+                        if (type === 'display') {
+                            return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                        }
+                        return data;
+                    }
+                },
+                {
+                    title: 'Valid', data: "is_valid", render: function (data, type, row) {
+                        if (type === 'display') {
+                            return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                        }
+                        return data;
+                    }
+                },
+                {
+                    title: 'Hostname', data: "hostname", render: function (data, type, row) {
+                        //return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC',row.fabric).replace('ID',row.uuid)}>${row.hostname}</a></b>`
+                        return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID', row.uuid)}>${row.hostname}</a></b>`
+                    }
+                },
+                { title: 'IP Address', data: "system_ip" },
+                { title: 'Version', data: "version" },
+                { title: 'Model', data: "model" },
+                { title: 'Persona', data: "persona" },
+                { title: 'Fabric', data: "fabric" },
+                {
+                    title: 'CTRL', data: "raw_data", render: function (data, type, row) {
+                        if (type === 'display') {
+                            return data.controlConnections === undefined ? "--" : data.controlConnections
+                        }
+                        return data.controlConnections === undefined ? null : parseInt(data.controlConnections, 10)
+                    }
+                },
+                {
+                    title: 'BFD', data: "raw_data", render: function (data, type, row) {
+                        if (type === 'display') {
+                            return data.bfdSessions === undefined ? "--" : data.bfdSessions
+                        }
+                        const match = data.bfdSessions === undefined ? null : data.bfdSessions.match(/^\d+/);
+                        const firstNumber = match ? parseInt(match[0], 10) : null;
+                        return firstNumber;
+                    }
+                },
+                {
+                    title: 'OMP', data: "raw_data", render: function (data, type, row) {
+                        if (type === 'display') {
+                            return data.ompPeers === undefined ? "--" : data.ompPeers;
+                        }
+                        const match = data.ompPeers === undefined ? null : data.ompPeers.match(/^\d+/);
+                        const firstNumber = match ? parseInt(match[0], 10) : null;
+                        return firstNumber;
+                    }
+                },
+                { title: 'Uptime (d)', data: "uptime" },
+
+            ]
+        }
+
+    );
+
     // get data and render table
     $(document).ready(function () {
-        show('#spinner');
-        get(getDevicesUrl)
-        .then(data=> {
-            $('#table').DataTable({
-                layout: {
-                    topStart: 'search',
-                    topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
-                },
-                pageLength: 10,
-                fixedHeader: true,
-                // Filter out non-onboarded devices
-                data: data.filter(device => device.hostname != null),
-                columns: [
-                {
-                        title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-                    {
-                        title: 'Synced', data: "is_sync", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-                    {
-                        title: 'Valid', data: "is_valid", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
-                            }
-                            return data;
-                        }
-                    },
-                    {
-                        title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                            return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC',row.fabric).replace('ID',row.uuid)}>${row.hostname}</a></b>`
-                        }
-                    },
-                    { title: 'IP Address', data: "system_ip" },
-                    { title: 'Version', data: "version" },
-                    { title: 'Model', data: "model" },
-                    { title: 'Persona', data: "persona" },
-                    { title: 'Fabric', data: "fabric" },
-                    {
-                        title: 'CTRL', data: "raw_data", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data.controlConnections===undefined ? "--" : data.controlConnections
-                            }
-                            return data.controlConnections===undefined ? null : parseInt(data.controlConnections,10)
-                        }
-                    },
-                    {
-                        title: 'BFD', data: "raw_data", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data.bfdSessions===undefined ? "--" : data.bfdSessions
-                            }
-                            const match = data.bfdSessions===undefined ? null:data.bfdSessions.match(/^\d+/);
-                            const firstNumber = match ? parseInt(match[0], 10) : null;
-                            return firstNumber;
-                        }
-                    },
-                    {
-                        title: 'OMP', data: "raw_data", render: function (data, type, row) {
-                            if (type === 'display') {
-                                return data.ompPeers===undefined ? "--" : data.ompPeers;
-                            }
-                            const match = data.ompPeers===undefined ? null:data.ompPeers.match(/^\d+/);
-                            const firstNumber = match ? parseInt(match[0], 10) : null;
-                            return firstNumber;
-                        }
-                    },
-                    { title: 'Uptime (d)', data: "uptime" },
-                    
-                ]
-            });
-            hide('#spinner');
-        })
-        .catch(error=>{
-            show_alert("danger","Failed to contact Cisco SDWAN",error)
-            hide('#spinner');
-            console.log(error);
+        // Add 'active' class to the first button
+        $('#fabric-buttons .fabric-btn').first().addClass('active');
+        loadData(fabric);
+
+        // Click handler to update the fabric variable
+        $('.fabric-btn').on('click', function () {
+            $('.fabric-btn').removeClass('active'); // remove active from all
+            $(this).addClass('active'); // add active to clicked one
+            fabric = $(this).data('fabric'); // update JS variable
+            console.log("new fabric=", fabric);
+            console.log("Selected fabric:", fabric);
+            loadData(fabric);
         });
+
+        function loadData(fabric) {
+            // Fire request
+            show('#spinner');
+            let url = getDevicesUrl.replace('FABRIC', fabric);
+            get(url)
+                .then(data => {
+                    table.clear().rows.add(data).draw();
+                    //$('#table').DataTable({
+
+                    hide('#spinner');
+                })
+                .catch(error => {
+                    show_alert("danger", "Failed to contact Cisco SDWAN", error)
+                    hide('#spinner');
+                    console.log(error);
+                });
+
+        };
+
+
     });
 </script>
 {% endblock %}

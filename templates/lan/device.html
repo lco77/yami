@@ -101,7 +101,7 @@
                 if (result.success) {
                     $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw)}</code></pre>`);
                 } else {
-                    $("#tab2-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab2-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         },
@@ -150,7 +150,7 @@
                         ]
                     });
                 } else {
-                    $("#tab3-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab3-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         }
@@ -204,7 +204,7 @@
                     });
                     $("#portUptimeNav").show();
                 } else {
-                    $("#tab4-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab4-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         });

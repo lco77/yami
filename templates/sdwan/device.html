@@ -92,10 +92,11 @@
                 cmd: "sh version"
             },
             render: (result) => {
+                console.log(result);
                 if (result.success) {
                     $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw)}</code></pre>`);
                 } else {
-                    $("#tab2-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab2-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         },
@@ -108,6 +109,7 @@
                 cmd: "sh int"
             },
             render: (result) => {
+                console.log(result);
                 if (result.success) {
                     $("#interfaceTable").DataTable({
                         layout: {
@@ -144,7 +146,7 @@
                         ]
                     });
                 } else {
-                    $("#tab3-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab3-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         }
@@ -154,29 +156,19 @@
     $(document).ready(function () {
         show('#spinner');
         show_alert("info","Hang on",`Loading data from ${hostname}...`);
-        runTasks(tasks)
-        .then(updatedTasks => {
-            console.log(updatedTasks);
-            for (const task of updatedTasks) {
-                if (task.result.success) {
-                    // Perform rendering if render function is defined
-                    if (typeof task.render === "function") {
-                        try {
-                            if (task.render_params !== undefined) {
-                                task.render(task.result, task.render_params);
-                            } else {
-                                task.render(task.result);
-                            }
-                        } catch (e) {
-                            console.error("Render function failed:", e);
-                        }
+        runTasks(tasks).then((results) => {
+            results.forEach((task, i) => {
+                if (task.render) {
+                    if (task.render_params !== undefined) {
+                        task.render(task.result, task.render_params);
+                    } else {
+                        task.render(task.result);
                     }
                 }
-            }
-        })
-        .finally(() => {
+            });
+        }).finally(() => {
             close_alert();
-            hide('#spinner');
+            hide("#spinner");
         });
     });
 

@@ -1,6 +1,7 @@
 import os
 import socket
 import re
+import json
 from datetime import timedelta
 from celery.result import AsyncResult
 from flask import Blueprint, request, session, jsonify
@@ -10,30 +11,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SDWAN_WW_HOST = os.environ.get("SDWAN_WW_HOST")
-SDWAN_WW_USERNAME = os.environ.get("SDWAN_WW_USERNAME")
-SDWAN_WW_PASSWORD = os.environ.get("SDWAN_WW_PASSWORD")
+SDWAN_FABRICS = json.loads(os.environ.get("SDWAN_FABRICS"))
 
-SDWAN_CN_HOST = os.environ.get("SDWAN_CN_HOST")
-SDWAN_CN_USERNAME = os.environ.get("SDWAN_CN_USERNAME")
-SDWAN_CN_PASSWORD = os.environ.get("SDWAN_CN_PASSWORD")
-
-sdwan_ww = Vmanage(SDWAN_WW_HOST,SDWAN_WW_USERNAME,SDWAN_WW_PASSWORD)
-sdwan_cn = Vmanage(SDWAN_CN_HOST,SDWAN_CN_USERNAME,SDWAN_CN_PASSWORD)
-
+sdwan = {}
+for f in SDWAN_FABRICS:
+    sdwan[f["name"]] = Vmanage(f["host"],f["username"],f["password"])
 
 bp = Blueprint('api_sdwan', __name__, url_prefix='/api/sdwan')
 
 # get devices
-@bp.route("/device", methods=['GET'])
+@bp.route("/<string:fabric>/device", methods=['GET'])
 @login_required
 #@cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
-async def get_devices():
-    data_ww = await sdwan_ww.get_devices()
-    #data_cn = await sdwan_cn.get_devices()
-    #data = data_ww | data_cn
-    data = data_ww
+async def get_devices(fabric):
+    if not fabric in sdwan.keys():
+        return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+    data = await sdwan[fabric].get_devices()
     if data:
         return [ device.todict() for uuid,device in data.items() if device.hostname is not None ]
     else:

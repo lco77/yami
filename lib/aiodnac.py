@@ -28,6 +28,11 @@ class DnacDevice:
         stack = len(serial) if serial else 0
         hostname = device.get("name", "").split(".")[0].upper() if device.get("name") else ""
 
+        # fix broken properties
+        for property in ["collectionStatus"]:
+            if property in device:
+                    del device[property]
+
         return cls(
             id=device.get("id", ""),
             hostname=hostname,

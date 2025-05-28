@@ -307,7 +307,6 @@ class Vmanage:
         Returns:
             A list of results from each task, in the same order they were passed.
         """
-    
         return await asyncio.gather(*(self.run_task(t) for t in tasks))
 
     async def get_devices(self) -> Dict[str, DeviceData]:
@@ -345,6 +344,12 @@ class Vmanage:
         for uuid_key, info in merged.items():
             # Defensive gets in case keys are missing
             system_ip = info.get("system-ip")
+
+            # Fix broken properties
+            for property in ["deviceEnterpriseCertificate","deviceCSR","oldSerialNumber","CSRDetail"]:
+                if property in info:
+                    del info[property]
+
             # compute uptime
             if "uptime-date" in info:
                 uptime = ms_to_uptime_days(int(info.get("uptime-date")))
