@@ -340,7 +340,7 @@ def home():
         },
         "SDWAN": {
             "text": "View and operate SDWAN routers",
-            "url": url_for('ui_lan.index')
+            "url": url_for('ui_sdwan.index')
         }
 
     }
