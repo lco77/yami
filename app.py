@@ -93,6 +93,9 @@ def refresh_session():
     # set default theme
     if "theme" not in session:
         session["theme"] = "sandstone"
+    # temporary: fix broken theme from existing sessions
+    elif any([session.get("theme") == e for e in ["dark","light"]]):
+        del session["theme"]
     # Check session expired
     if 'username' in session:
         now = int(time.time())
