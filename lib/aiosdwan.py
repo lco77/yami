@@ -346,7 +346,7 @@ class Vmanage:
             system_ip = info.get("system-ip")
 
             # Fix broken properties
-            for property in ["deviceEnterpriseCertificate","deviceCSR","oldSerialNumber","CSRDetail"]:
+            for property in ["deviceEnterpriseCertificate","deviceCSR","oldSerialNumber","CSRDetail", "vedgeCSR"]:
                 if property in info:
                     del info[property]
 

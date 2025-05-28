@@ -6,7 +6,16 @@
 <div class="row">
     <div class="col">
         <br>
-        <h4>LAN</h4>
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">LAN</h4>
+            <div id="fabric-buttons" class="btn-group" role="group" aria-label="Fabric selection">
+                {% for item in fabrics %}
+                <button type="button" class="btn btn-outline-primary fabric-btn" data-fabric="{{ item }}">
+                    {{ item }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
         <hr>
     </div>
 </div>
@@ -22,14 +31,12 @@
 
 {% block script %}
 <script>
-    const getSwitchesUrl = "{{ url_for('api_dnac.get_devices') }}";
-    const showSwitchUrl = "{{ url_for('ui_lan.show_device',id='DUMMY') }}";
-    // get data and render table
-    $(document).ready(function () {
-        show('#spinner');
-        get(getSwitchesUrl + "?family=Switches and Hubs")
-        .then(data=> {
-            $('#table').DataTable({
+    let fabric = "{{ fabrics[0] }}"; // default to first fabric
+    const getDevicesUrl = "{{ url_for('api_dnac.get_devices',fabric='FABRIC') }}";
+    const showDeviceUrl = "{{ url_for('ui_lan.show_device',fabric='FABRIC',id='ID') }}";
+
+    // init datatable
+    let table = new DataTable('#table',{
                 layout: {
                     topStart: 'search',
                     topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
@@ -37,7 +44,6 @@
                 pageLength: 10,
                 fixedHeader: true,
                 order: [[1, 'asc']],
-                data: data,
                 columns: [
                     {
                         title: 'Reachable', data: "raw_data.communicationState", render: function (data, type, row) {
@@ -49,7 +55,7 @@
                     },
                     {
                         title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                            return `<b><a class="text-primary" href=${showSwitchUrl.replace('DUMMY',row.id)}>${row.hostname}</a></b>`
+                            return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID',row.id)}>${row.hostname}</a></b>`
                         }
                     },
                     { title: 'IP Address', data: "ip_address" },
@@ -85,13 +91,37 @@
                     
                 ]
             });
-            hide('#spinner');
-        })
-        .catch(error=>{
-            show_alert("danger","Failed to contact Cisco DNAC",error)
-            hide('#spinner');
-            console.log(error);
+
+    // get data and render table
+    $(document).ready(function () {
+
+        // Add 'active' class to the first button
+        $('#fabric-buttons .fabric-btn').first().addClass('active');
+        loadData(fabric);
+
+        // Click handler to update the fabric variable
+        $('.fabric-btn').on('click', function () {
+            $('.fabric-btn').removeClass('active');
+            $(this).addClass('active');
+            fabric = $(this).data('fabric');
+            loadData(fabric);
         });
+
+        function loadData(fabric) {
+            show('#spinner');
+            let url = getDevicesUrl.replace('FABRIC', fabric) + "?family=Switches and Hubs";
+            get(url)
+                .then(data => {
+                    table.clear().rows.add(data).draw();
+                    hide('#spinner');
+                })
+                .catch(error => {
+                    show_alert("danger", "Failed to contact Cisco DNAC", error)
+                    hide('#spinner');
+                    console.log(error);
+                });
+        };
+
     });
 </script>
 {% endblock %}

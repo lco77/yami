@@ -39,30 +39,32 @@ class Device:
 @login_required
 async def index():
     user = read_user_from_session(session)
-    return render_template("lan/index.html", user=user, theme=session["theme"])
+    return render_template("lan/index.html", user=user, theme=session["theme"], fabrics=list(dnac.keys()))
 
 # LAN device page
-@bp.route('/<string:id>', methods=['GET'])
+@bp.route('/<string:fabric>/<string:id>', methods=['GET'])
 @login_required
-async def show_device(id):
+async def show_device(fabric,id):
     user = read_user_from_session(session)
     try:
-        r = await dnac.get_devices({"id":[id]})
+        if not fabric in dnac.keys():
+            return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+        r = await dnac[fabric].get_devices({"id":[id]})
         data = r[0]
         hostname = data.hostname
         device_type = check_device_type(data.platform)
     except Exception as err:
         return jsonify({"error": str(err)}), 400
-    return render_template("lan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data)
+    return render_template("lan/device.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data, fabric=fabric)
 
 # LAN device interface page
-@bp.route('/<string:id>/interface/<string:if_name>', methods=['GET'])
+@bp.route('/<string:fabric>/<string:id>/interface/<string:if_name>', methods=['GET'])
 @login_required
-async def show_interface(id,if_name):
+async def show_interface(fabric,id,if_name):
     if_name = if_name.replace("_","/")
     user = read_user_from_session(session)
     try:
-        r = await dnac.get_devices({"id":[id]})
+        r = await dnac[fabric].get_devices({"id":[id]})
         data = r[0]
         hostname = data.hostname
         device_type = check_device_type(data.platform)

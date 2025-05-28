@@ -26,11 +26,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Cisco DNAC backend
-DNAC_HOST = os.environ.get("DNAC_HOST")
-DNAC_USERNAME = os.environ.get("DNAC_USERNAME")
-DNAC_PASSWORD = os.environ.get("DNAC_PASSWORD")
-
 # Redis backend for Celery / Server side sessions / Caching
 REDIS_URL = os.environ.get("REDIS_URL")
 

@@ -22,7 +22,7 @@ bp = Blueprint('api_sdwan', __name__, url_prefix='/api/sdwan')
 # get devices
 @bp.route("/<string:fabric>/device", methods=['GET'])
 @login_required
-#@cache.cached(timeout=300, key_prefix=make_key)
+@cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
 async def get_devices(fabric):
     if not fabric in sdwan.keys():

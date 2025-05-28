@@ -80,13 +80,15 @@
 <script>
     const id = "{{id}}";
     const hostname = "{{hostname}}";
+    const fabric = "{{fabric}}";
     const deviceType = "{{device_type}}";
     const data = JSON.parse('{{data.tojson()|safe}}');
     const pollInterval = 2000;
     const resolveDnsUrl = "{{url_for('resolve')}}";
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
     const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
-    const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',id='ID',if_name='IF') }}";
+    const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',fabric='FABRIC',id='ID',if_name='IF') }}";
+
     // Tasks definitions
     let tasks = [
         {
@@ -127,7 +129,7 @@
                             {
                                 title: 'Interface', data: "interface", render: function (data, type, row) {
                                     const ifLink = data.replaceAll("/", "_");
-                                    return `<b><a class="text-primary" href=${showInterfaceUrl.replace('ID', id).replace('IF', ifLink)}>${row.interface}</a></b>`;
+                                    return `<b><a class="text-primary" href=${showInterfaceUrl.replace('FABRIC', fabric).replace('ID', id).replace('IF', ifLink)}>${row.interface}</a></b>`;
                                 }
                             },
                             { title: 'Description', data: "description" },
@@ -173,7 +175,6 @@
                         up_time_seconds: timeToSeconds(row.up_time),
                         down_time_seconds: timeToSeconds(row.down_time)
                     }));
-                    console.log(parsed);
                     $("#portUptimeTable").DataTable({
                         layout: {
                             topStart: 'search',
@@ -209,6 +210,7 @@
             }
         });
     }
+
     // Run tasks
     $(document).ready(function () {
         show('#spinner');

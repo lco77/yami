@@ -31,11 +31,11 @@
 
 {% block script %}
 <script>
-    const test = '{{fabrics|tojson}}';
     let fabric = "{{ fabrics[0] }}"; // default to first fabric
     let getDevicesUrl = "{{ url_for('api_sdwan.get_devices',fabric='FABRIC') }}";
     let showDeviceUrl = "{{ url_for('ui_sdwan.show_device',fabric='FABRIC',id='ID') }}";
-    // init table
+
+    // init datatable
     let table = new DataTable('#table',
         {
             layout: {
@@ -73,7 +73,6 @@
                 },
                 {
                     title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                        //return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC',row.fabric).replace('ID',row.uuid)}>${row.hostname}</a></b>`
                         return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID', row.uuid)}>${row.hostname}</a></b>`
                     }
                 },
@@ -111,37 +110,31 @@
                     }
                 },
                 { title: 'Uptime (d)', data: "uptime" },
-
             ]
         }
-
     );
 
     // get data and render table
     $(document).ready(function () {
+
         // Add 'active' class to the first button
         $('#fabric-buttons .fabric-btn').first().addClass('active');
         loadData(fabric);
 
         // Click handler to update the fabric variable
         $('.fabric-btn').on('click', function () {
-            $('.fabric-btn').removeClass('active'); // remove active from all
-            $(this).addClass('active'); // add active to clicked one
-            fabric = $(this).data('fabric'); // update JS variable
-            console.log("new fabric=", fabric);
-            console.log("Selected fabric:", fabric);
+            $('.fabric-btn').removeClass('active');
+            $(this).addClass('active');
+            fabric = $(this).data('fabric');
             loadData(fabric);
         });
 
         function loadData(fabric) {
-            // Fire request
             show('#spinner');
             let url = getDevicesUrl.replace('FABRIC', fabric);
             get(url)
                 .then(data => {
                     table.clear().rows.add(data).draw();
-                    //$('#table').DataTable({
-
                     hide('#spinner');
                 })
                 .catch(error => {
@@ -149,9 +142,7 @@
                     hide('#spinner');
                     console.log(error);
                 });
-
         };
-
 
     });
 </script>

@@ -1,6 +1,7 @@
 import os
 import socket
 import re
+import json
 from datetime import timedelta
 from celery.result import AsyncResult
 from flask import Blueprint, request, session, jsonify
@@ -9,33 +10,37 @@ from lib.aiodnac import Dnac
 from dotenv import load_dotenv
 
 load_dotenv()
-DNAC_HOST = os.environ.get("DNAC_HOST")
-DNAC_USERNAME = os.environ.get("DNAC_USERNAME")
-DNAC_PASSWORD = os.environ.get("DNAC_PASSWORD")
+DNAC_FABRICS = json.loads(os.environ.get("DNAC_FABRICS"))
 
-dnac = Dnac(DNAC_HOST,DNAC_USERNAME,DNAC_PASSWORD)
+dnac = {}
+for f in DNAC_FABRICS:
+    dnac[f["name"]] = Dnac(f["host"],f["username"],f["password"])
 
 bp = Blueprint('api_dnac', __name__, url_prefix='/api/dnac')
 
 # get devices
-@bp.route("/device", methods=['GET'])
+@bp.route("/<string:fabric>/device", methods=['GET'])
 @login_required
 @cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
-async def get_devices():
-    data = await dnac.get_devices(request.args)
+async def get_devices(fabric):
+    if not fabric in dnac.keys():
+        return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+    data = await dnac[fabric].get_devices(request.args)
     if data:
         return [ device.todict() for device in data ]
     else:
         return []
 
 # get device
-@bp.route("/device/<string:id>", methods=['GET'])
+@bp.route("/<string:fabric>/device/<string:id>", methods=['GET'])
 @login_required
 @cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
-async def get_device(id):
-    data = await dnac.get_device(id)
+async def get_device(fabric,id):
+    if not fabric in dnac.keys():
+        return jsonify({"error": f"Invalid fabric {fabric}"}), 400
+    data = await dnac[fabric].get_device(id)
     if data:
         return data
     else:

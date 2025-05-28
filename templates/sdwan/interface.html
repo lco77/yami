@@ -55,7 +55,7 @@
     const resolveDnsUrl = "{{url_for('resolve')}}";
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
     const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
-    const showInterfaceUrl = "{{ url_for('ui_sdwan.show_interface',fabric='FABRIC',id='ID',if_name='IF') }}";
+
     // Tasks definitions
     const tasks = [
         {
@@ -110,8 +110,8 @@
                     const filteredRenamed2 = mapObjectKeys(result.parsed[0], mappedKeys2);
                     objectToTable(filteredRenamed2, "#tab4-content");
                 } else {
-                    $("#tab1-content").html(`❌ Task failed: ${result.error}`);
-                    $("#tab4-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab1-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
+                    $("#tab4-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         },
@@ -138,7 +138,7 @@
                     const filteredRenamed = mapObjectKeys(result.parsed[0], mappedKeys);
                     objectToTable(filteredRenamed, "#tab3-content");
                 } else {
-                    $("#tab3-content").html(`❌ Task failed: ${result.error}`);
+                    $("#tab3-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
                 }
             }
         },
@@ -151,7 +151,11 @@
                 cmd: `sh run interface ${if_name}`
             },
             render: (result) => {
-                $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw|| "❌ Task failed")}</code></pre>`);
+                if (result.success) {
+                    $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw)}</code></pre>`);
+                } else {
+                    $("#tab3-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
+                }
             }
         }
     ];
@@ -160,29 +164,19 @@
     $(document).ready(function () {
         show('#spinner');
         show_alert("info","Hang on",`Loading data from ${hostname}...`);
-        runTasks(tasks)
-        .then(updatedTasks => {
-            console.log(updatedTasks);
-            for (const task of updatedTasks) {
-                if (task.result) {
-                    // Perform rendering if render function is defined
-                    if (typeof task.render === "function") {
-                        try {
-                            if (task.render_params !== undefined) {
-                                task.render(task.result, task.render_params);
-                            } else {
-                                task.render(task.result);
-                            }
-                        } catch (e) {
-                            console.error("Render function failed:", e);
-                        }
+        runTasks(tasks).then((results) => {
+            results.forEach((task, i) => {
+                if (task.render) {
+                    if (task.render_params !== undefined) {
+                        task.render(task.result, task.render_params);
+                    } else {
+                        task.render(task.result);
                     }
                 }
-            }
-        })
-        .finally(() => {
+            });
+        }).finally(() => {
             close_alert();
-            hide('#spinner');
+            hide("#spinner");
         });
     });
 
