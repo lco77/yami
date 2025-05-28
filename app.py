@@ -26,7 +26,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Redis backend for Celery / Server side sessions / Caching
+# Redis backend for Celery / Server side sessions / Caching / Locks
+# DB0 -> Flask caching
+# DB1 -> Flask sessions
+# DB2 -> Celery
 REDIS_URL = os.environ.get("REDIS_URL")
 
 # LDAP backend for authentication / authorization
@@ -360,11 +363,6 @@ app.register_blueprint(ui_lan.bp)
 # UI SDWAN blueprint
 import ui_sdwan
 app.register_blueprint(ui_sdwan.bp)
-
-
-
-
-
 
 
 if __name__ == '__main__':

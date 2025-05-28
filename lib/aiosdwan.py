@@ -1,17 +1,14 @@
-#!/usr/bin/env python3
-import asyncio
 import json
+import httpx
+import asyncio
 from dataclasses import dataclass, asdict, fields
 from ipaddress import IPv4Address, IPv4Network
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional
 from datetime import datetime, timedelta, timezone
-
-import httpx
-
 
 SEMAPHORE = 10
 TIMEOUT = 15.0
-SESSION_LIFETIME = 1800
+SESSION_LIFETIME = 300
 
 # Utility function to convert epoch uptime
 def ms_to_uptime_days(ms):
@@ -25,7 +22,7 @@ def ms_to_uptime_days(ms):
         return None
     
 @dataclass
-class DeviceData:
+class SdwanDevice:
     uuid: str
     fabric: str
     persona: str
@@ -40,10 +37,48 @@ class DeviceData:
     is_valid: bool
     is_sync: bool
     is_reachable: bool
-    raw_data: Dict[str, Any]
+    raw_data: dict[str, Any]
     latitude: float = 0.0
     longitude: float = 0.0
     uptime: str = None
+
+    @classmethod
+    def from_api(cls, fabric:str, device:dict[str, Any]) -> "SdwanDevice":
+        # Defensive gets in case keys are missing
+        system_ip = device.get("system-ip")
+
+        # Fix broken properties
+        for property in ["deviceEnterpriseCertificate","deviceCSR","oldSerialNumber","CSRDetail", "vedgeCSR"]:
+            if property in device:
+                del device[property]
+
+        # compute uptime
+        if "uptime-date" in device:
+            uptime = ms_to_uptime_days(int(device.get("uptime-date")))
+        else:
+            uptime = None
+        return SdwanDevice(
+            uuid=device["uuid"],
+            uptime=uptime,
+            fabric=fabric,
+            persona=device.get("personality", ""),
+            system_ip=IPv4Address(system_ip) if system_ip else None,
+            hostname=device.get("host-name"),
+            site_id=device.get("site-id"),
+            model=device.get("deviceModel", "").replace("vedge-", "").replace("cloud", "vbond"),
+            version=device.get("version"),
+            template_id=device.get("templateId"),
+            template_name=device.get("template"),
+            is_managed=(
+                "managed-by" in device and device["managed-by"] != "Unmanaged"
+            ),
+            is_valid=(device.get("validity") == "valid"),
+            is_sync=(device.get("configStatusMessage") == "In Sync"),
+            is_reachable=(device.get("reachability") == "reachable"),
+            latitude=float(device.get("latitude", 0.0)),
+            longitude=float(device.get("longitude", 0.0)),
+            raw_data=device
+        )
 
     def todict(self):
         result = {}
@@ -68,7 +103,7 @@ class InterfaceData:
     vpn_id: str
     ip: IPv4Address
     network: IPv4Network
-    raw_data: Dict[str, Any]
+    raw_data: dict[str, Any]
 
 
 @dataclass
@@ -79,7 +114,7 @@ class VrrpData:
     preempt: bool
     master: bool
     ip: IPv4Address
-    raw_data: Dict[str, Any]
+    raw_data: dict[str, Any]
 
 
 @dataclass
@@ -92,7 +127,7 @@ class TlocData:
     weight: int
     encapsulation: str
     color: str
-    raw_data: Dict[str, Any]
+    raw_data: dict[str, Any]
 
 
 class Vmanage:
@@ -106,18 +141,7 @@ class Vmanage:
         semaphore: asyncio.Semaphore = None,
         timeout:float = TIMEOUT
     ):
-        """
-        Initialize the Vmanage client and attempt an immediate login.
 
-        Args:
-            host:      Hostname or IP address of the vManage server.
-            username:  Username for authentication.
-            password:  Password for authentication.
-            verify:    Verify SSL certificate (default: False).
-            port:      Port of the vManage server (default: 443).
-            semaphore: Max number of concurrent requests (default: 40).
-            debug:     If True, print additional debug information (not currently used).
-        """
         self.host = host
         self.base_url = f"https://{host}:{port}"
         self.verify = verify
@@ -131,72 +155,57 @@ class Vmanage:
         else:
             self.semaphore = semaphore
 
-
-    def connect(self) -> bool:
-        """
-        Perform synchronous login to obtain session cookie and CSRF token.
-
-        Args:
-            username: Username for authentication.
-            password: Password for authentication.
-
-        Returns:
-            True if login succeeds, False otherwise.
-
-        Raises:
-            ConnectionError: If a networking error occurs during login.
-        """
+    async def connect(self) -> bool:
         # check if a valid token is set
-        if self.token_time is not None and (datetime.now(timezone.utc) - self.token_time) < timedelta(seconds=SESSION_LIFETIME):
+        token_check = self.token_time is not None
+        time_check = (datetime.now(timezone.utc) - self.token_time) < timedelta(seconds=SESSION_LIFETIME) if token_check else False
+        connect_check = token_check and time_check
+        if connect_check:
+            #print(f'Vmanage auth ok: token_check={token_check} time_check={time_check} connect_check={connect_check} token_time={self.token_time}')
             return True
+        print(f'Vmanage re-auth triggered: token_check={token_check} time_check={time_check} connect_check={connect_check} token_time={self.token_time}')
         
-        #client = httpx.AsyncClient(verify=self.verify)
+        self.token_time = None
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         data = {"j_username": self.username, "j_password": self.password}
 
         # Attempt the POST to j_security_check
         try:
-            response = httpx.post(f"{self.base_url}/j_security_check", data=data, headers=headers, verify=self.verify)
-        except httpx.HTTPError as exc:
-            raise ConnectionError(f"ConnectionError during login: {exc}") from exc
-
-        # Check if login succeeded: status=200 and response is not an HTML login page
-        if response.status_code == 200 and not response.text.startswith("<html>"):
-            # Get session cookie
-            set_cookie = response.headers.get("Set-Cookie", "")
-            if not set_cookie:
-                return False
-            cookie = set_cookie.split(";")[0]
-
-            # Prepare base headers
-            self.headers = {
-                "Content-Type": "application/json",
-                "Cookie": cookie
-            }
-
-            # Retrieve CSRF token
-            try:
-                token_resp = httpx.get(f"{self.base_url}/dataservice/client/token", headers=self.headers, verify=self.verify)
-            except httpx.HTTPError as exc:
-                raise ConnectionError(f"ConnectionError fetching CSRF token: {exc}") from exc
-
-            if token_resp.status_code == 200:
+            async with httpx.AsyncClient(headers=headers, verify=self.verify, timeout=self.timeout) as client:
+                # login form
+                response = await client.post(f"{self.base_url}/j_security_check", data=data)
+                print(f'LOGIN {response.status_code} text={response.text} headers={response.headers}')
+                if (response.status_code != 200 or response.text.startswith('<html>')):
+                    #print(f'Vmanage login failed: user {self.username} on {self.host}')
+                    raise
+                self.headers = {
+                    "Content-Type": "application/json",
+                    "Cookie": response.headers.get("Set-Cookie")
+                }
+                # CSRF token
+                response = await client.get(f"{self.base_url}/dataservice/client/token")
+                print(f'CSRF {response.status_code} text={response.text} headers={response.headers}')
+                if response.status_code != 200:
+                    raise
+                # Update self
                 self.token_time = datetime.now(timezone.utc)
-                self.headers["X-XSRF-TOKEN"] = token_resp.text.strip()
-                # Update base_url to /dataservice for subsequent calls
-                self.base_url = f"{self.base_url}/dataservice"
-                #self.session = client
+                self.headers["X-XSRF-TOKEN"] = response.text
                 return True
-        return False
+        except Exception:
+            print(f'Vmanage: user {self.username} failed to authenticate to {self.host}')
+            return False
+        return True
 
-    async def _get(self, path: str, params: Dict[str, Any] = None) -> Optional[str]:
-        if not self.connect():
+    async def _get(self, path: str, params: dict[str, Any] = None) -> Optional[str]:
+        check = await self.connect()
+        print(f'check_auth={check}')
+        if not await self.connect():
             return None
 
         params = params or {}
         try:
             async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
-                response = await client.get(f"{self.base_url}{path}", params=params)
+                response = await client.get(f"{self.base_url}/dataservice{path}", params=params)
                 if response.status_code == 200:
                     return response.text
                 return None
@@ -206,24 +215,11 @@ class Vmanage:
     async def _post(
         self,
         path: str,
-        params: Dict[str, Any] = None,
-        data: Dict[str, Any] = None
+        params: dict[str, Any] = None,
+        data: dict[str, Any] = None
     ) -> Optional[str]:
-        """
-        Internal helper for asynchronous POST requests.
 
-        Args:
-            path:   The API endpoint path (appended to base_url).
-            params: Optional query parameters.
-            data:   The JSON data to be posted.
-
-        Returns:
-            The response body (str) if status_code == 200, otherwise None.
-
-        Raises:
-            ConnectionError: If a networking error occurs.
-        """
-        if not self.connect():
+        if not await self.connect():
             return None
 
         params = params or {}
@@ -231,14 +227,14 @@ class Vmanage:
 
         try:
             async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
-                response = await client.post(f"{self.base_url}{path}", params=params, data=json.dumps(data))
+                response = await client.post(f"{self.base_url}/dataservice{path}", params=params, data=json.dumps(data))
                 if response.status_code == 200:
                     return response.text
                 return None
         except httpx.HTTPError as exc:
             raise ConnectionError(f"ConnectionError on POST {path}: {exc}") from exc
 
-    async def get(self, endpoint:str, params:Dict[str, Any] = None) -> Optional[List[Dict[str, Any]]]:
+    async def get(self, endpoint:str, params:dict[str, Any] = None) -> Optional[list[dict[str, Any]]]:
         """
         Public asynchronous GET method that returns JSON 'data' list when present.
 
@@ -265,9 +261,9 @@ class Vmanage:
     async def post(
         self,
         endpoint: str,
-        params: Dict[str, Any] = None,
-        data: Dict[str, Any] = None
-    ) -> Optional[List[Dict[str, Any]]]:
+        params: dict[str, Any] = None,
+        data: dict[str, Any] = None
+    ) -> Optional[list[dict[str, Any]]]:
         """
         Public asynchronous POST method that returns JSON 'data' list when present.
 
@@ -297,7 +293,7 @@ class Vmanage:
         async with self.semaphore:
             return await task
             
-    async def run_tasks(self, tasks: List[asyncio.Task]) -> List[Any]:
+    async def run_tasks(self, tasks: list[asyncio.Task]) -> list[Any]:
         """
         Execute multiple coroutines concurrently, respecting a semaphore limit.
 
@@ -309,25 +305,32 @@ class Vmanage:
         """
         return await asyncio.gather(*(self.run_task(t) for t in tasks))
 
-    async def get_devices(self) -> Dict[str, DeviceData]:
+    async def get_devices(self) -> dict[str, SdwanDevice]:
         """
         Fetch and consolidate device information (controllers, vEdges, statuses).
 
         Returns:
             A dictionary keyed by device UUID, with values as `DeviceData` objects.
         """
+
+        # check session before parallel tasks
+        if not await self.connect():
+            return None
+        
+        # define tasks
         tasks = [
             self.get("/system/device/controllers"),
             self.get("/system/device/vedges"),
             self.get("/device")
         ]
 
+        # run tasks
         results = await self.run_tasks(tasks)
         if not all(results):
-            return {}
-
+            return None
         controllers_raw, vedges_raw, status_raw = results
 
+        # map results into dictionaries
         controllers = {item["uuid"]: item for item in controllers_raw}
         vedges = {item["uuid"]: item for item in vedges_raw}
         statuses = {item["uuid"]: item for item in status_raw}
@@ -340,46 +343,9 @@ class Vmanage:
             if device_uuid in statuses:
                 merged[device_uuid] = {**merged[device_uuid], **statuses[device_uuid]}
 
-        devices: Dict[str, DeviceData] = {}
-        for uuid_key, info in merged.items():
-            # Defensive gets in case keys are missing
-            system_ip = info.get("system-ip")
+        return { uuid:SdwanDevice.from_api(fabric=self.host, device=device) for uuid,device in merged.items() }
 
-            # Fix broken properties
-            for property in ["deviceEnterpriseCertificate","deviceCSR","oldSerialNumber","CSRDetail", "vedgeCSR"]:
-                if property in info:
-                    del info[property]
-
-            # compute uptime
-            if "uptime-date" in info:
-                uptime = ms_to_uptime_days(int(info.get("uptime-date")))
-            else:
-                uptime = None
-            devices[uuid_key] = DeviceData(
-                uuid=info["uuid"],
-                uptime=uptime,
-                fabric=self.host,
-                persona=info.get("personality", ""),
-                system_ip=IPv4Address(system_ip) if system_ip else None,
-                hostname=info.get("host-name"),
-                site_id=self._safe_int(info.get("site-id")),
-                model=info.get("deviceModel", "").replace("vedge-", "").replace("cloud", "vbond"),
-                version=info.get("version"),
-                template_id=info.get("templateId"),
-                template_name=info.get("template"),
-                is_managed=(
-                    "managed-by" in info and info["managed-by"] != "Unmanaged"
-                ),
-                is_valid=(info.get("validity") == "valid"),
-                is_sync=(info.get("configStatusMessage") == "In Sync"),
-                is_reachable=(info.get("reachability") == "reachable"),
-                latitude=float(info.get("latitude", 0.0)),
-                longitude=float(info.get("longitude", 0.0)),
-                raw_data=info
-            )
-        return devices
-
-    async def get_device_interfaces(self, device: DeviceData) -> Optional[List[InterfaceData]]:
+    async def get_device_interfaces(self, device: SdwanDevice) -> Optional[list[InterfaceData]]:
         """
         Retrieve interface details for a given device.
 
@@ -419,7 +385,7 @@ class Vmanage:
 
         return interfaces
 
-    async def get_device_tlocs(self, device: DeviceData) -> Optional[List[TlocData]]:
+    async def get_device_tlocs(self, device: SdwanDevice) -> Optional[list[TlocData]]:
         """
         Retrieve TLOC (Transport Locator) information for a given device.
 
@@ -458,7 +424,7 @@ class Vmanage:
 
         return tlocs
 
-    async def get_device_vrrp(self, device: DeviceData) -> Optional[List[VrrpData]]:
+    async def get_device_vrrp(self, device: SdwanDevice) -> Optional[list[VrrpData]]:
         """
         Retrieve VRRP configuration and status for a given device.
 
@@ -495,7 +461,7 @@ class Vmanage:
                 continue
         return vrrp_entries
 
-    async def get_device_template_values(self, device: DeviceData) -> Optional[Dict[str, Any]]:
+    async def get_device_template_values(self, device_uuid:str, template_uuid:str) -> Optional[dict[str, Any]]:
         """
         Retrieve input values for a device's attached template.
 
@@ -505,12 +471,12 @@ class Vmanage:
         Returns:
             A dictionary of template values for the device, or None if unavailable.
         """
-        if not device.uuid or not device.template_id:
+        if not device_uuid or not template_uuid:
             return None
 
         payload = {
-            "templateId": device.template_id,
-            "deviceIds": [device.uuid],
+            "templateId": template_uuid,
+            "deviceIds": [device_uuid],
             "isEdited": False,
             "isMasterEdited": False
         }
@@ -521,15 +487,16 @@ class Vmanage:
 
         try:
             return raw_data[0]
-        except (IndexError, TypeError):
+        except Exception:
             return None
 
-    @staticmethod
-    def _safe_int(value: Any) -> Optional[int]:
-        """
-        Internal helper to safely convert a value to int, returning None if invalid.
-        """
+    async def get_device_route_table(self, device_uuid:str) -> Optional[dict[str, Any]]:
+        if not device_uuid:
+            return None
+        raw_data = await self.get("/device/ip/ipRoutes", {"deviceId":device_uuid})
+        if not raw_data:
+            return None
         try:
-            return int(value)
-        except (ValueError, TypeError):
+            return raw_data
+        except Exception:
             return None

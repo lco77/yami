@@ -60,15 +60,18 @@ LDAP_BASE_DN="DC=company,DC=com"
 # use a JSON formatted string to map roles with AD groups
 # you can map multiple groups per role
 # Note: a user can match multiple roles
-LDAP_ROLES='{"admin": ["CN=admin_users"], "read-only": ["CN=read_users"]}'
+LDAP_ROLES='{"admin": ["admin_group_name"], "read-only": ["read_only_group_name"]}'
 
 # REDIS setup (required by Celery)
 REDIS_URL="redis://localhost"
 
 # Cisco DNAC
-DNAC_HOST="dnac.company.com"
-DNAC_USERNAME="username"
-DNAC_PASSWORD="password"
+# Note: You can set up multiple DNAC servers
+DNAC_FABRICS='[{"name":"DNA","host":"dnac.company.com","username":"admin","password":"secret"}]'
+
+# Cisco SDWAN
+# Note: You can set up multiple SDWAN servers
+SDWAN_FABRICS='[{"name":"SDWAN","host":"vmanage.company.com","username":"admin","password":"secret"}]'
 
 # DNS resolution
 DNS_SERVERS='["10.0.0.2","10.0.0.3"]'

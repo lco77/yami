@@ -30,7 +30,7 @@ async def get_devices(fabric):
     if data:
         return [ device.todict() for device in data ]
     else:
-        return []
+        return jsonify({"error": f"No data"}), 400
 
 # get device
 @bp.route("/<string:fabric>/device/<string:id>", methods=['GET'])
@@ -44,4 +44,4 @@ async def get_device(fabric,id):
     if data:
         return data
     else:
-        return None
+        return jsonify({"error": f"No data"}), 400

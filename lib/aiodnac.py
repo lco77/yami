@@ -1,5 +1,4 @@
 import json
-import re
 import httpx
 from typing import Any
 from dataclasses import dataclass, asdict, field
@@ -22,7 +21,7 @@ class DnacDevice:
     raw_data: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, device: dict[str, Any]) -> "DnacDevice":
+    def from_api(cls, device: dict[str, Any]) -> "DnacDevice":
         platform = [e.strip() for e in device.get("platformId", "").split(",")] if device.get("platformId") else []
         serial = [e.strip() for e in device.get("serialNumber", "").split(",")] if device.get("serialNumber") else []
         stack = len(serial) if serial else 0
@@ -101,7 +100,7 @@ class Dnac:
         data = await self._get("/dna/data/api/v1/networkDevices",params=params)
 
         if data and "response" in data:
-            return [DnacDevice.from_dict(device) for device in data.get("response")]
+            return [DnacDevice.from_api(device) for device in data.get("response")]
         else:
             return None
     
@@ -109,6 +108,6 @@ class Dnac:
         data = await self._get(f"/dna/data/api/v1/networkDevices/{id}")
 
         if data and "response" in data:
-            return DnacDevice.from_dnac_api(data.get("response"))
+            return DnacDevice.from_api(data.get("response"))
         else:
             return None
