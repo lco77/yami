@@ -27,12 +27,13 @@ bp = Blueprint('api_sdwan', __name__, url_prefix='/api/sdwan')
 # get devices
 @bp.route("/device", methods=['GET'])
 @login_required
-@cache.cached(timeout=300, key_prefix=make_key)
+#@cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
 async def get_devices():
     data_ww = await sdwan_ww.get_devices()
-    data_cn = await sdwan_cn.get_devices()
-    data = data_ww | data_cn
+    #data_cn = await sdwan_cn.get_devices()
+    #data = data_ww | data_cn
+    data = data_ww
     if data:
         return [ device.todict() for uuid,device in data.items() if device.hostname is not None ]
     else:
