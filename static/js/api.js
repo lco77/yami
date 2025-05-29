@@ -1,35 +1,4 @@
 
-// show
-function show(id) {
-    $(id).show();
-}
-
-// hide
-function hide(id) {
-    $(id).hide();
-}
-
-// show alert
-function show_alert(level, title, message) {
-    const $alert = $("#alert");
-
-    // Reset and apply new Bootstrap alert class
-    $alert
-        .removeClass()
-        .addClass(`alert alert-dismissible alert-${level}`);
-
-    // Update content
-    $alert.find(".alert-heading").text(title);
-    $alert.find("p").html(message);
-
-    // Show alert
-    $alert.show()
-}
-
-// close alert
-function close_alert() {
-    $("#alert").hide();
-}
 
 // API get
 function get(url, params = {}) {

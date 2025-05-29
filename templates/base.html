@@ -5,7 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <!-- favicon -->
+
+  <!-- favicons -->
   <link rel="shortcut icon" href="{{ url_for('static',filename='img/favicon.ico')}}" />
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static',filename='img/apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static',filename='img/favicon-32x32.png') }}">
@@ -64,7 +65,7 @@
 
     .main-content {
       position: absolute;
-      top: 50px;                /* Matches .top-nav height */
+      top: 50px; /* Matches .top-nav height */
       bottom: 0;
       left: 0;
       right: 0;
@@ -80,9 +81,7 @@
     }
 
   </style>
-
 </head>
-
 <body>
 
   <!-- Fixed top nav -->
@@ -149,12 +148,17 @@
     <div class="row">
       <div class="col">
         <div id="alert" class="alert alert-dismissible" style="display: none;">
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          <button type="button" class="btn-close" id="alert-close"></button>
           <h4 class="alert-heading"></h4>
           <p class="mb-0"></p>
         </div>
       </div>
     </div>
+    <script>
+      $('#alert-close').on('click', function () {
+        $('#alert').hide().removeClass('show');
+      });
+    </script>
     <!-- view content -->
     {% block content %}{% endblock %}
   </div>

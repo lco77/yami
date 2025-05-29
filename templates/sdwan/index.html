@@ -45,7 +45,6 @@
             pageLength: 10,
             fixedHeader: true,
             order: [[3, 'asc']],
-            // Filter out non-onboarded devices
             columns: [
                 {
                     title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
@@ -80,7 +79,7 @@
                 { title: 'Version', data: "version" },
                 { title: 'Model', data: "model" },
                 { title: 'Persona', data: "persona" },
-                { title: 'Fabric', data: "fabric" },
+                //{ title: 'Fabric', data: "fabric" },
                 {
                     title: 'CTRL', data: "raw_data", render: function (data, type, row) {
                         if (type === 'display') {
@@ -114,7 +113,7 @@
         }
     );
 
-    // get data and render table
+    // devices
     $(document).ready(function () {
 
         // Add 'active' class to the first button
@@ -129,21 +128,18 @@
             loadData(fabric);
         });
 
+        // fetch data
         function loadData(fabric) {
             show('#spinner');
             let url = getDevicesUrl.replace('FABRIC', fabric);
-            get(url)
-                .then(data => {
-                    table.clear().rows.add(data).draw();
-                    hide('#spinner');
-                })
-                .catch(error => {
-                    show_alert("danger", "Failed to contact Cisco SDWAN", error)
-                    hide('#spinner');
-                    console.log(error);
-                });
+            get(url).then(data => {
+                table.clear().rows.add(data).draw();
+                hide('#spinner');
+            }).catch(error => {
+                show_alert("danger", "Failed to contact Cisco SDWAN", error)
+                hide('#spinner');
+            });
         };
-
     });
 </script>
 {% endblock %}

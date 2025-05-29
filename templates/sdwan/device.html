@@ -12,90 +12,141 @@
 </div>
 <div class="row">
     <div class="col">
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" data-bs-toggle="tab" href="#tab1" aria-selected="true" role="tab">Summary</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab" tabindex="-1">Version</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab4" aria-selected="false" role="tab" tabindex="-1">Template Values</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link iproute" data-bs-toggle="tab" href="#tab5" aria-selected="false" role="tab" tabindex="-1">Route table</a>
-        </li>
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane fade active show" id="tab1" role="tabpanel">
-            <div id="tab1-content">
-                <div class="row">
-                    <div class="col">
-                <table class="table table-striped">
-                    <tr>
-                        <td><p class="text-primary"><b>Hostname</b></p></td>
-                        <td>{{data.hostname}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>IP Address</b></p></td>
-                        <td>{{data.system_ip}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Platform</b></p></td>
-                        <td>{{data.model}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Serial</b></p></td>
-                        <td>{{data.raw_data["subjectSerialNumber"]}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Version</b></p></td>
-                        <td>{{data.version}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Template</b></p></td>
-                        <td>{{data.raw_data["template"]}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Uptime (days)</b></p></td>
-                        <td>{{data.uptime}}</td>
-                    </tr>
-                </table>
-                </div>
-                <div class="col">
-                <div id="map" style="height: 96%;"></div>
-                </div>
-                </div>
-            </div>
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" data-bs-toggle="tab" href="#tab1" aria-selected="true" role="tab">Summary</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab"
+                    tabindex="-1">Version</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link text-info" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab"
+                    tabindex="-1">Interfaces</a>
+            </li>
             
-        </div>
-        <div class="tab-pane fade" id="tab2" role="tabpanel">
-            <div id="tab2-content"></div>
-        </div>
-        <div class="tab-pane fade" id="tab3" role="tabpanel">
-            <div id="tab3-content"><table id="interfaceTable" class="table table-striped"></table></div>
-        </div>
-        <div class="tab-pane fade" id="tab4" role="tabpanel">
-            <div id="tab4-content"><table id="templateValuesTable" class="table table-striped"></table></div>
-        </div>
-        <div class="tab-pane fade" id="tab5" role="tabpanel">
-            <div id="tab5-content">
-    <!-- ip route tab content -->
-        <div class="row">
-            <div id="iprouteFormContainer" class="col-lg-10">
-
+            <li class="nav-item" role="presentation">
+                <a class="nav-link text-info iproute" data-bs-toggle="tab" href="#tab5" aria-selected="false" role="tab"
+                    tabindex="-1">Route table</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link text-info" data-bs-toggle="tab" href="#tab6" aria-selected="false" role="tab"
+                    tabindex="-1">Monitor</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link text-success" data-bs-toggle="tab" href="#tab4" aria-selected="false" role="tab"
+                    tabindex="-1">Configure</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <!-- summary -->
+            <div class="tab-pane fade active show" id="tab1" role="tabpanel">
+                <div id="tab1-content">
+                    <div class="row">
+                        <div class="col">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Hostname</b></p>
+                                    </td>
+                                    <td>{{data.hostname}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>IP Address</b></p>
+                                    </td>
+                                    <td>{{data.system_ip}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Platform</b></p>
+                                    </td>
+                                    <td>{{data.model}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Serial</b></p>
+                                    </td>
+                                    <td>{{data.raw_data["subjectSerialNumber"]}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Version</b></p>
+                                    </td>
+                                    <td>{{data.version}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Template</b></p>
+                                    </td>
+                                    <td>{{data.raw_data["template"]}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Uptime (days)</b></p>
+                                    </td>
+                                    <td>{{data.uptime}}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col">
+                            <div id="map" style="height: 96%;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="iprouteSVGContainer" class="col-lg-12" style="width: 100%; height: 1000px">
+            <!-- version -->
+            <div class="tab-pane fade" id="tab2" role="tabpanel">
+                <div id="tab2-content"></div>
+            </div>
+            <!-- interfaces -->
+            <div class="tab-pane fade" id="tab3" role="tabpanel">
+                <div id="tab3-content">
+                    <table id="interfaceTable" class="table table-striped"></table>
+                </div>
+            </div>
+            <!-- template values -->
+            <div class="tab-pane fade" id="tab4" role="tabpanel">
+                <div id="tab4-content">
+                    <div class="row">
+                        <table id="templateValuesTable" class="table table-striped"></table>
+                    </div>
+                    <div class="row">
+                        <div class="col text-center">
+                            <button id="submit-template-values" class="btn btn-success">Push configuration</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- route table -->
+            <div class="tab-pane fade" id="tab5" role="tabpanel">
+                <div id="tab5-content">
+                    <div class="row">
+                        <div class="col d-flex justify-content-center">
+                            <!-- form -->
+                            <div id="iprouteFormContainer" class="w-auto">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- d3 diagram -->
+                        <div id="iprouteSVGContainer" class="col text-center" style="width: 100%; height: 1000px">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- monitor -->
+            <div class="tab-pane fade" id="tab6" role="tabpanel">
+                <div class="row">
+                    <div id="tab6-content" class="col"></div>
+                </div>
+                <div class="row">
+                    <div id="tab6-data" class="col">
+                        <table id="monitorTable" class="table table-striped"></table>
+                    </div>
+                </div>
             </div>
         </div>
-    <!-- end of ip route tab content -->
-
-            </div>
-        </div>
-    </div>
     </div>
 </div>
 {% endblock %}
@@ -113,10 +164,13 @@
     const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
     const showInterfaceUrl = "{{url_for('ui_sdwan.show_interface',fabric='FABRIC',id='ID',if_name='IF')}}";
     const getDeviceTemplateValuesUrl = "{{url_for('api_sdwan.get_device_template_values',fabric='FABRIC',device_id='DEVICE_ID',template_id='TEMPLATE_ID')}}";
+    const setDeviceTemplateValuesUrl = "{{url_for('api_sdwan.get_device_template_values',fabric='FABRIC',device_id='DEVICE_ID',template_id='TEMPLATE_ID')}}";
     const getDeviceRouteTableUrl = "{{url_for('api_sdwan.get_device_route_table',fabric='FABRIC',device_id='DEVICE_ID')}}";
+    const getDeviceMonitorActionsUrl = "{{url_for('api_sdwan.get_device_monitor_actions',fabric='FABRIC',device_id='DEVICE_ID')}}";
     
     // Tasks definitions
     const tasks = [
+        // show version
         {
             type: "ssh_cmd",
             params: {
@@ -126,7 +180,6 @@
                 cmd: "sh version"
             },
             render: (result) => {
-                console.log(result);
                 if (result.success) {
                     $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw)}</code></pre>`);
                 } else {
@@ -134,6 +187,7 @@
                 }
             }
         },
+        // show interface
         {
             type: "ssh_cmd",
             params: {
@@ -143,7 +197,6 @@
                 cmd: "sh int"
             },
             render: (result) => {
-                console.log(result);
                 if (result.success) {
                     $("#interfaceTable").DataTable({
                         layout: {
@@ -186,16 +239,57 @@
         }
     ];
 
+    // init datatable for template values
+    let templateValuesTable = new DataTable('#templateValuesTable',{
+        rowId: 'key',  // enables access by key
+        layout: {
+            topStart: 'search',
+            topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+        },
+        ordering: false,
+        pageLength: 10,
+        fixedHeader: true,
+        columns: [
+            { data: 'template', title: 'Feature template' },
+            {
+                data: 'key', title: 'Variable Name', render: function (data, type, row, meta) {
+                    if (type === 'display') {
+                        return row.title;
+                    }
+                    return data;
+                }
+            },
+            { data: 'type', title: 'Type' },
+            {
+                data: 'value', title: 'Value', render: function (data, type, row, meta) {
+                    if (type === 'display') {
+                        return row.field;
+                    }
+                    return data;
+                },
+            },
+            { data: 'required', title: 'Required' },
+        ]
+    });
+
+    // init datatable for monitoring
+    let monitorTable = new DataTable('#monitorTable',{
+        layout: {
+            topStart: 'search',
+            topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+        },
+        ordering: false,
+        pageLength: 10,
+        fixedHeader: true,
+    });
     // Run tasks
     $(document).ready(function () {
-        // add map
+        // openstreetmap
         var map = L.map('map').setView([data.latitude, data.longitude], 13);
-        // openstreetmap layer
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
-        // marker
         var marker = L.marker([data.latitude, data.longitude]).addTo(map);
 
         // run commands
@@ -216,53 +310,143 @@
             hide("#spinner");
         });
 
-        // get template values
-        get(getDeviceTemplateValuesUrl.replace("FABRIC",fabric).replace("DEVICE_ID",id).replace("TEMPLATE_ID",data.template_id)).then(values=>{
-            console.log(values);
-            // Convert object into array of { key: ..., value: ... }
-            const keyValueArray = Object.entries(values).map(([key, value]) => {
-                return { key, value };
+        // get device template values and parse data
+        get(getDeviceTemplateValuesUrl.replace("FABRIC",fabric).replace("DEVICE_ID",id).replace("TEMPLATE_ID",data.template_id))
+        .then((data) => {
+            //console.log('Template value:', data.data[0]);
+            //console.log('Template metadata:', data.header.columns);
+
+            // Text input field
+            const inputText = (key, value, editable) =>
+                `<input type="text" class="form-control form-control-sm editable-input" 
+                    data-key="${key}" value="${value==='TEMPLATE_IGNORE'?'':value}" ${editable ? '' : 'disabled=""'}>`;
+
+            // Radio buttons
+            const inputRadio = (key, value, editable, values = []) =>
+                
+                values.map(val => `
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input editable-input" type="radio" 
+                            name="${key}" value="${val}" data-key="${key}"
+                            ${val === value ? 'checked=""' : ''} ${editable ? '' : 'disabled=""'}>
+                        <label class="form-check-label">${val}</label>
+                    </div>
+                `).join('');
+
+            // Select dropdown
+            const inputSelect = (key, value, values = [], editable, required) => {
+                if (required === false) { values.unshift("TEMPLATE_IGNORE")} ;
+                const options = values.map(val =>
+                    `<option value="${val}" ${val === value ? 'selected' : ''}>${val==='TEMPLATE_IGNORE'?'':val}</option>`
+                ).join('');
+
+                return `<select class="form-select form-select-sm editable-input" data-key="${key}" ${editable ? '' : 'disabled=""'}>
+                            ${options}
+                        </select>`;
+            };
+
+            // Loop on header and build data array for datatable
+            const parsedValues = data.header.columns.map(row => {
+                switch (row.dataType) {
+                    case "boolean":
+                        // fix boolean values stored as text
+                        const normalizeBool = val => val === 'true' ? true : val === 'false' ? false : val;
+                        field = inputRadio(row.property,normalizeBool(data.data[0][row.property]),row.editable,[true,false]);
+                        break;
+                    case "number":
+                    case "ip":
+                    case "ipv4":
+                    case "ipv4-prefix":
+                    case "string":
+                        field = inputText(row.property,data.data[0][row.property],row.editable);
+                        break;
+                    case "enum":
+                        const options = Array.isArray(row.values)
+                            ? row.values.map(val => val.value)
+                            : []; // fallback to empty list
+                        field = inputSelect(row.property,data.data[0][row.property],options,row.editable, row.optional ? false : true);
+                        break;
+                };
+                // return parsed data
+                return {
+                    template: row.templateType === undefined ? 'None': row.templateType,
+                    key: row.property,
+                    type: row.dataType,
+                    required: row.optional ? false : true,
+                    editable: row.editable,
+                    title: row.title,
+                    value: data.data[0][row.property],
+                    field: field
+                }
             });
-            $("#templateValuesTable").DataTable({
-                layout: {
-                    topStart: 'search',
-                    topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
-                },
-                pageLength: 15,
-                fixedHeader: true,
-                data: keyValueArray,
-                columns: [
-                    { data: 'key', title: 'Template Variable' },
-                    { data: 'value', title: 'Value' }
-                ]
-            });
-        }).catch(error=>{
+            //console.log('Template parsed values', parsedValues)
+            templateValuesTable.clear().rows.add(parsedValues).draw();
+        })
+        .catch(error => {
+            show_alert('danger','Error','Failed to get template values.');
         });
 
-        // get route table
-        //get(getDeviceRouteTableUrl.replace("FABRIC",fabric).replace("DEVICE_ID",data.system_ip)).then(values=>{
-        //    console.log(values);
+        // get monitor actions
+        get(getDeviceMonitorActionsUrl.replace("FABRIC",fabric).replace("DEVICE_ID",id))
+        .then((actions) => {
+            const actionFilter = ['ARP','BFD','BGP','Control','Crash','Crypto','DHCP','Endpoint Tracker','Hardware','IP NAT','IPsec','NTP','OMP','OSPF','SIG','Smart License','Tunnel','VRRP'];
+            const availableActions = actions.data.filter(val => val.personality.includes(data.persona) && actionFilter.includes(val.name));
+            renderDynamicForm(availableActions,"#tab6-content","#monitorTable",getDeviceMonitorActionsUrl.replace("FABRIC",fabric).replace("DEVICE_ID",id),data.system_ip,monitorTable);
+        })
+        .catch(error => {
+            console.log('getDeviceMonitorActions:', error );
+            show_alert('danger','Error','Failed to get available monitor actions.');
+        });
+    });
 
+    // Sync template values on input change
+    $(document).on('input change', '.editable-input', function () {
+        const rowKey = $(this).data('key');
+        const rowData = templateValuesTable.row('#' + rowKey).data();
+        let newValue;
+        if ($(this).is(':radio')) {
+            newValue = $(`input[name="${$(this).attr('name')}"]:checked`).val();
+        } else if ($(this).is(':checkbox')) {
+            newValue = $(this).prop('checked');
+        } else {
+            newValue = $(this).val();
+        }
+        rowData.value = newValue;
+    });
 
-        //}).catch(error=>{
-        //});
+    // Submit tempate values
+    $(document).on('click', '#submit-template-values', function () {
+        const templateValues = {};
+        // collect values
+        let templateValueErrors = [];
+        templateValuesTable.rows().data().each(function (row) {
+            if (row.value==="" && row.required ) {templateValueErrors.push(row.title)};
+            templateValues[row.key] = row.value==="" ?"TEMPLATE_IGNORE":row.value;
+        });
+        // Check for missing values
+        if (templateValueErrors.length>0) {
+            show_alert('danger','Error',templateValueErrors.map(val=>`Variable ${val} cannot be empty !<br>`).join());
+        } else {
+            // Send POST request
+            post(setDeviceTemplateValuesUrl.replace('FABRIC',fabric).replace("DEVICE_ID",id).replace("TEMPLATE_ID",data.template_id),{},templateValues)
+            .then(data=>{
+                show_alert('success','Success',`Now pushing configuration to ${hostname}.<br>Task ID = ${data.id}<br><b>Note: Do not re-submit until this task is completed!</b>`);
+                //console.log('Submitted Template Values:',data);
+            })
+            .catch(error=>{
+                show_alert('danger','Error','Failed to submit device template values.');
+            });
+        }
     });
 
 </script>
 
-
 <!-- ip route -->
- <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script src="{{ url_for('static' , filename='js/iproute.js') }}" type="text/javascript"></script>
 <script>
   $(document).ready(function () {
     const deviceId   = data.system_ip;
-    console.log("deviceId=",deviceId);
-    // Default diagram
-    //$("a.iproute").click(function (e) {
-        //e.preventDefault();
-      //show('spinner');
-
       let cache = sessionStorage.getItem('iprouteCache-'+deviceId);
       if (cache != null) {
         let data = JSON.parse(cache);
@@ -271,15 +455,8 @@
         $('#iprouteSVGContainer').html(svg);
       }
       get(getDeviceRouteTableUrl.replace("FABRIC",fabric).replace("DEVICE_ID",deviceId)).then(data=>{
-        console.log(data);
         // Save to sessionStorage
         sessionStorage.setItem('iprouteCache-'+deviceId,JSON.stringify(data));
-        //if (data.hasOwnProperty('data')) {
-        //  sessionStorage.setItem('iprouteCache-'+deviceId,JSON.stringify(data));
-        //} else {
-        //  $('#iprouteSVGContainer').html(makeAlert('warning','Oops!','Failed to get data; please retry',false));
-        //}
-        //hide('spinner');
         iprouteForm('iprouteForm',data,function(form){
           $('#iprouteFormContainer').html(form);
           // callback function to register Refresh diagram button
@@ -297,9 +474,7 @@
         let svg       = iprouteSVG(hierarchy,'#iprouteSVGContainer');
         $('#iprouteSVGContainer').html(svg);
       });
-    //});
   });
-
 </script>
 
 {% endblock %}

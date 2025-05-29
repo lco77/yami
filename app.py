@@ -157,15 +157,24 @@ def login_required(f):
     return async_wrapper if inspect.iscoroutinefunction(f) else sync_wrapper
 
 # Roles required decorator
-def roles_required(allowed_roles:list[str]):
+def roles_required(allowed_roles: list[str]):
+    # caution: nesting is required because roles_required() takes arguments
     def decorator(f):
         @wraps(f)
-        def wrapper(*args, **kwargs):
+        def sync_wrapper(*args, **kwargs):
             user_roles = session.get("roles", [])
-            if not any(role in allowed_roles for role in user_roles):
+            if not "username" in session or not any(role in allowed_roles for role in user_roles):
                 abort(403)
             return f(*args, **kwargs)
-        return wrapper
+
+        @wraps(f)
+        async def async_wrapper(*args, **kwargs):
+            user_roles = session.get("roles", [])
+            if not "username" in session or not any(role in allowed_roles for role in user_roles):
+                abort(403)
+            return await f(*args, **kwargs)
+
+        return async_wrapper if asyncio.iscoroutinefunction(f) else sync_wrapper
     return decorator
 
 # LDAP login function

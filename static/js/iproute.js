@@ -64,7 +64,7 @@ function iprouteForm(id,data,callback) {
                + select('iprouteProtocol','Protocol',options(protocols),'route-source-protocol','text-danger')
                + select('iprouteNextHop','Next Hop',options(nexthops),'next-hop-next-hop-address','text-warning')
                //+ input('iprouteNextHop','Next Hop','next-hop-next-hop-address','text-warning')
-               + input('iproutePrefix','Prefix','route-destination-prefix','text-muted')
+               + input('iproutePrefix','Prefix','route-destination-prefix','text-primary-emphasis')
                + btn('iprouteRefresh','Filter');
     // Update DOM
     //$(selector).html(form(id,inputs));
@@ -130,7 +130,8 @@ function iprouteHierarchy(data) {
         return value;
     };
     // Root node
-    nodes.push(node('root',{},'','root','root','','white','#ebebeb',10));
+    //nodes.push(node('root',{},'','root','root','','white','#ebebeb',10));
+    nodes.push(node('root',{},'','root','root','','#00bc8c','#ebebeb',10));
     // add Route nodes
     data.forEach(e => {
         // Init vpn node & update link data
@@ -204,7 +205,7 @@ nodes.each(d => {
   if (d.x < x0) {x0 = d.x};
 });
 const height = x1 - x0 + dx * 2;  
-console.log(nodes);
+//console.log(nodes);
 
     // append the svg object to the body of the page
     //const svg = d3.select(selector).append("svg")

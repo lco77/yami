@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 SEMAPHORE = 10
 TIMEOUT = 15.0
-SESSION_LIFETIME = 300
+SESSION_LIFETIME = 3600
 
 # Utility function to convert epoch uptime
 def ms_to_uptime_days(ms):
@@ -205,7 +205,9 @@ class Vmanage:
         params = params or {}
         try:
             async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
-                response = await client.get(f"{self.base_url}/dataservice{path}", params=params)
+                url = f"{self.base_url}/dataservice{path}"
+                response = await client.get(url, params=params)
+                print(f'{response.status_code} GET {url} params={params} text={response.text}')
                 if response.status_code == 200:
                     return response.text
                 return None
@@ -227,7 +229,9 @@ class Vmanage:
 
         try:
             async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
-                response = await client.post(f"{self.base_url}/dataservice{path}", params=params, data=json.dumps(data))
+                url = f"{self.base_url}/dataservice{path}"
+                response = await client.post(url, params=params, data=json.dumps(data))
+                print(f'{response.status_code} POST {url} params={params} text={response.text}')
                 if response.status_code == 200:
                     return response.text
                 return None
@@ -253,8 +257,9 @@ class Vmanage:
 
         try:
             data_json = json.loads(response_text)
+            return data_json
             # vManage typically returns {'data': [...]}
-            return data_json.get("data")
+            #return data_json.get("data")
         except (json.JSONDecodeError, AttributeError):
             return None
 
@@ -284,8 +289,9 @@ class Vmanage:
 
         try:
             data_json = json.loads(response_text)
+            return data_json
             # vManage typically returns {'data': [...]}
-            return data_json.get("data")
+            #return data_json.get("data")
         except (json.JSONDecodeError, AttributeError):
             return None
 
@@ -331,9 +337,9 @@ class Vmanage:
         controllers_raw, vedges_raw, status_raw = results
 
         # map results into dictionaries
-        controllers = {item["uuid"]: item for item in controllers_raw}
-        vedges = {item["uuid"]: item for item in vedges_raw}
-        statuses = {item["uuid"]: item for item in status_raw}
+        controllers = {item["uuid"]: item for item in controllers_raw.get("data")}
+        vedges = {item["uuid"]: item for item in vedges_raw.get("data")}
+        statuses = {item["uuid"]: item for item in status_raw.get("data")}
 
         # Combine both controllers and vedges by UUID
         merged = controllers | vedges
@@ -358,12 +364,12 @@ class Vmanage:
         if not device.system_ip:
             return None
 
-        raw_data = await self.get("/device/interface/synced", {"deviceId": str(device.system_ip)})
-        if not raw_data:
+        data = await self.get("/device/interface/synced", {"deviceId": str(device.system_ip)})
+        if not data:
             return None
 
         interfaces = []
-        for iface in raw_data:
+        for iface in data.get("data"):
             try:
                 ip_str = iface["ip-address"]
                 mask = iface["ipv4-subnet-mask"]
@@ -398,12 +404,12 @@ class Vmanage:
         if not device.system_ip:
             return None
 
-        raw_data = await self.get("/device/omp/tlocs/advertised", {"deviceId": str(device.system_ip)})
-        if not raw_data:
+        data = await self.get("/device/omp/tlocs/advertised", {"deviceId": str(device.system_ip)})
+        if not data:
             return None
 
         tlocs = []
-        for item in raw_data:
+        for item in data.get("data"):
             try:
                 tlocs.append(
                     TlocData(
@@ -437,12 +443,12 @@ class Vmanage:
         if not device.system_ip:
             return None
 
-        raw_data = await self.get("/device/vrrp", {"deviceId": str(device.system_ip)})
-        if not raw_data:
+        data = await self.get("/device/vrrp", {"deviceId": str(device.system_ip)})
+        if not data:
             return None
 
         vrrp_entries = []
-        for item in raw_data:
+        for item in data.get("data"):
             try:
                 master = (item["vrrp-state"] == "proto-state-master")
                 vrrp_entries.append(
@@ -481,22 +487,82 @@ class Vmanage:
             "isMasterEdited": False
         }
 
-        raw_data = await self.post("/template/device/config/input", data=payload)
-        if not raw_data:
+        data = await self.post("/template/device/config/input", data=payload)
+        if not data:
+            return None
+        try:
+            return data
+        except Exception:
             return None
 
+    async def set_device_template_values(self, device_uuid:str, template_uuid:str, data:dict[str,str]) -> Optional[dict[str, Any]]:
+        if not device_uuid or not template_uuid:
+            return None
+
+        payload = {
+            "deviceTemplateList": [
+                {
+                    "templateId":template_uuid,
+                    "device": [data],
+                    "isEdited": False,
+                    "isMasterEdited": False
+                }
+            ]
+        }
+
+        data = await self.post("/template/device/config/attachfeature", data=payload)
+        if not data:
+            return None
         try:
-            return raw_data[0]
+            return data
+        except Exception:
+            return None
+
+    async def get_device_template_definition(self, template_uuid:str) -> Optional[dict[str, Any]]:
+        if not template_uuid:
+            return None
+        data = await self.get(f"/template/device/object/{template_uuid}")
+        if not data:
+            return None
+        try:
+            return data
         except Exception:
             return None
 
     async def get_device_route_table(self, device_uuid:str) -> Optional[dict[str, Any]]:
         if not device_uuid:
             return None
-        raw_data = await self.get("/device/ip/ipRoutes", {"deviceId":device_uuid})
-        if not raw_data:
+        data = await self.get("/device/ip/ipRoutes", {"deviceId":device_uuid})
+        if not data:
             return None
         try:
-            return raw_data
+            return data.get("data")
         except Exception:
             return None
+
+    async def get_device_monitor_actions(self,params:dict[str,str]=None) -> Optional[dict[str, Any]]:
+        # get the list of available actions
+        if params == None:
+            data = await self.get("/client/monitor/device/options", {"isCiscoDevice":True})
+        # or execute the requested action
+        else:
+            mandatory_params = ['deviceId','uri','parent','action']
+            if not all([e in params for e in mandatory_params]):
+                return None
+            else:
+                url = params.get("uri")
+                if url.startswith("dataservice"):
+                    url = url.replace("dataservice","")
+                if "filters" in params:
+                    request_params = params.get("filters")
+                else:
+                    request_params = {}
+                data = await self.get(url,params={"deviceId":params.get("deviceId")}|request_params)
+
+        if not data:
+            return None
+        try:
+            return data
+        except Exception:
+            return None
+    
