@@ -59,6 +59,18 @@
                                 </tr>
                                 <tr>
                                     <td>
+                                        <p class="text-primary"><b>Site ID</b></p>
+                                    </td>
+                                    <td>{{data.site_id}}</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Group</b></p>
+                                    </td>
+                                    <td>{{ data.raw_data["device-groups"] | join('<br>') | safe }}</td>
+                                </tr>
+                                <tr>
+                                    <td>
                                         <p class="text-primary"><b>Platform</b></p>
                                     </td>
                                     <td>{{data.model}}</td>
@@ -87,10 +99,16 @@
                                     </td>
                                     <td>{{data.uptime}}</td>
                                 </tr>
+                                <tr>
+                                    <td>
+                                        <p class="text-primary"><b>Template log</b></p>
+                                    </td>
+                                    <td>{{ data.raw_data.templateApplyLog | join('<br>') | safe }}</td>
+                                </tr>
                             </table>
                         </div>
                         <div class="col">
-                            <div id="map" style="height: 96%;"></div>
+                            <div id="map" style="height: 98%";></div>
                         </div>
                     </div>
                 </div>
@@ -122,7 +140,7 @@
             <div class="tab-pane fade" id="tab5" role="tabpanel">
                 <div id="tab5-content">
                     <div class="row">
-                        <div class="col d-flex justify-content-center">
+                        <div class="col">
                             <!-- form -->
                             <div id="iprouteFormContainer" class="w-auto">
                             </div>
@@ -259,7 +277,6 @@
                     return data;
                 }
             },
-            { data: 'type', title: 'Type' },
             {
                 data: 'value', title: 'Value', render: function (data, type, row, meta) {
                     if (type === 'display') {
@@ -268,6 +285,7 @@
                     return data;
                 },
             },
+            { data: 'type', title: 'Type' },
             { data: 'required', title: 'Required' },
         ]
     });

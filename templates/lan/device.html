@@ -20,56 +20,64 @@
             <a class="nav-link" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab" tabindex="-1">Version</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
-        </li>
-        <li class="nav-item" role="presentation" style="display: none;" id="portUptimeNav">
-            <a class="nav-link" data-bs-toggle="tab" href="#tab4" aria-selected="false" role="tab" tabindex="-1">Ports Uptime</a>
+            <a class="nav-link text-info" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
         </li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane fade active show" id="tab1" role="tabpanel">
             <div id="tab1-content">
-                <table class="table table-striped">
-                    <tr>
-                        <td><p class="text-primary"><b>Hostname</b></p></td>
-                        <td>{{data.hostname}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>IP Address</b></p></td>
-                        <td>{{data.ip_address}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Platform</b></p></td>
-                        <td>{{data.platform}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Serial</b></p></td>
-                        <td>{{data.serial}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Version</b></p></td>
-                        <td>{{data.version}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Stack size</b></p></td>
-                        <td>{{data.stack_size}}</td>
-                    </tr>
-                    <tr>
-                        <td><p class="text-primary"><b>Uptime (days)</b></p></td>
-                        <td>{{data.uptime}}</td>
-                    </tr>
-                </table>
+                <div class="row">
+                    <div class="col">
+                        <table class="table table-striped">
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Hostname</b></p>
+                                </td>
+                                <td>{{data.hostname}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>IP Address</b></p>
+                                </td>
+                                <td>{{data.ip_address}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Platform</b></p>
+                                </td>
+                                <td>{{data.platform | join('<br>') | safe}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Serial</b></p>
+                                </td>
+                                <td>{{data.serial | join('<br>') | safe}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Version</b></p>
+                                </td>
+                                <td>{{data.version}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Stack size</b></p>
+                                </td>
+                                <td>{{data.stack_size}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col">
+
+                    </div>
+                </div>
             </div>
-            
         </div>
         <div class="tab-pane fade" id="tab2" role="tabpanel">
             <div id="tab2-content"></div>
         </div>
         <div class="tab-pane fade" id="tab3" role="tabpanel">
             <div id="tab3-content"><table id="interfaceTable" class="table table-striped"></table></div>
-        </div>
-        <div class="tab-pane fade" id="tab4" role="tabpanel">
-            <div id="tab4-content"><table id="portUptimeTable" class="table table-striped"></table></div>
         </div>
     </div>
     </div>
@@ -114,46 +122,6 @@
                 use_textfsm: true,
                 device_type: deviceType,
                 cmd: "sh int"
-            },
-            render: (result) => {
-                if (result.success) {
-                    $("#interfaceTable").DataTable({
-                        layout: {
-                            topStart: 'search',
-                            topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
-                        },
-                        pageLength: 15,
-                        fixedHeader: true,
-                        data: result.parsed,
-                        columns: [
-                            {
-                                title: 'Interface', data: "interface", render: function (data, type, row) {
-                                    const ifLink = data.replaceAll("/", "_");
-                                    return `<b><a class="text-primary" href=${showInterfaceUrl.replace('FABRIC', fabric).replace('ID', id).replace('IF', ifLink)}>${row.interface}</a></b>`;
-                                }
-                            },
-                            { title: 'Description', data: "description" },
-                            {
-                                title: 'Status', data: "protocol_status", render: function (data, type, row) {
-                                    if (data.startsWith("up")) {
-                                        return `<p class="text-success">${data}</p>`;
-                                    } else {
-                                        return `<p class="text-danger">${data}</p>`;
-                                    }
-                                }
-                            },
-                            { title: 'Speed', data: "speed" },
-                            { title: 'Duplex', data: "duplex" },
-                            { title: 'inRate', data: "input_rate" },
-                            { title: 'outRate', data: "output_rate" },
-                            { title: 'inErrors', data: "input_errors" },
-                            { title: 'outErrors', data: "output_errors" },
-                            { title: 'queueDrops', data: "queue_drops" },
-                        ]
-                    });
-                } else {
-                    $("#tab3-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
-                }
             }
         }
     ];
@@ -167,46 +135,6 @@
                 use_textfsm: false,
                 device_type: deviceType,
                 cmd: "sh int link"
-            },
-            render: (result) => {
-                if (result.success) {
-                    const parsed = parseShIntLink(result.raw).map(row => ({
-                        ...row,
-                        up_time_seconds: timeToSeconds(row.up_time),
-                        down_time_seconds: timeToSeconds(row.down_time)
-                    }));
-                    $("#portUptimeTable").DataTable({
-                        layout: {
-                            topStart: 'search',
-                            topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
-                        },
-                        pageLength: 15,
-                        fixedHeader: true,
-                        data: parsed,
-                        columns: [
-                            { title: 'Port', data: "port" },
-                            {
-                                title: 'Uptime', data: "up_time", render: function (data, type, row) {
-                                    if (type === 'display') {
-                                        return data;
-                                    }
-                                    return row.up_time_seconds===undefined ? null : parseInt(row.up_time_seconds,10);
-                                }
-                            },
-                            {
-                                title: 'Downtime', data: "down_time", render: function (data, type, row) {
-                                    if (type === 'display') {
-                                        return data;
-                                    }
-                                    return row.down_time_seconds==undefined ? null : parseInt(row.down_time_seconds,10);
-                                }
-                            },
-                        ]
-                    });
-                    $("#portUptimeNav").show();
-                } else {
-                    $("#tab4-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
-                }
             }
         });
     }
@@ -216,6 +144,27 @@
         show('#spinner');
         show_alert("info","Hang on",`Loading data from ${hostname}...`);
         runTasks(tasks).then((results) => {
+
+            // Utility function to merge "sh int link" with "sh int"
+            function enrichInterfaces(primaryArray, optionalArray = []) {
+                // Build a lookup map from the optional array
+                const optionalMap = Object.fromEntries(
+                    optionalArray.map(obj => [obj.interface, obj])
+                );
+                // Enrich primary array
+                return primaryArray.map(obj => {
+                    const match = optionalMap[obj.interface] || {};
+                    return {
+                        ...obj,
+                        uptime: match.uptime ?? null,
+                        downtime: match.downtime ?? null,
+                        uptime_seconds: match.uptime_seconds ?? null,
+                        downtime_seconds: match.downtime_seconds ?? null
+                    };
+                });
+            }
+
+            // Render tasks results with embedded render functions ("sh ver")
             results.forEach((task, i) => {
                 if (task.render) {
                     if (task.render_params !== undefined) {
@@ -225,6 +174,78 @@
                     }
                 }
             });
+
+            // Find results of "sh int" and "sh int link" + merge data
+            const indexShIntArray = results.findIndex(obj => obj.params.cmd === "sh int");
+            const indexShIntLinkArray = results.findIndex(obj => obj.params.cmd === "sh int link");
+            if (results[indexShIntArray].result.success) {
+                const shIntArray = results[indexShIntArray].result.parsed;
+                let shIntLinkArray = [];
+                if (indexShIntLinkArray !== -1 && results[indexShIntLinkArray].result.success) {
+                    shIntLinkArray = parseShIntLink(results[indexShIntLinkArray].result.raw).map(row => ({
+                        ...row,
+                        uptime_seconds: timeToSeconds(row.uptime),
+                        downtime_seconds: timeToSeconds(row.downtime)
+                    }));
+                }
+                const interfaceData = enrichInterfaces(shIntArray, shIntLinkArray);
+
+                // Render merged data
+                $("#interfaceTable").DataTable({
+                    layout: {
+                        topStart: 'search',
+                        topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                    },
+                    pageLength: 15,
+                    fixedHeader: true,
+                    data: interfaceData,
+                    columns: [
+                        {
+                            title: 'Interface', data: "interface", render: function (data, type, row) {
+                                const ifLink = data.replaceAll("/", "_");
+                                return `<b><a class="text-primary" href=${showInterfaceUrl.replace('FABRIC', fabric).replace('ID', id).replace('IF', ifLink)}>${row.interface}</a></b>`;
+                            }
+                        },
+                        { title: 'Description', data: "description" },
+                        {
+                            title: 'Status', data: "protocol_status", render: function (data, type, row) {
+                                if (data.startsWith("up")) {
+                                    return `<p class="text-success">${data}</p>`;
+                                } else {
+                                    return `<p class="text-danger">${data}</p>`;
+                                }
+                            }
+                        },
+                        { title: 'Speed', data: "speed" },
+                        { title: 'Duplex', data: "duplex" },
+                        {
+                            title: 'Uptime', data: "uptime", render: function (data, type, row) {
+                                if (type === 'display') {
+                                    return data == null || data == "00:00:00" ? "" : data;
+                                }
+                                return row.uptime_seconds;
+                            }
+                        },
+                        {
+                            title: 'Downtime', data: "downtime", render: function (data, type, row) {
+                                if (type === 'display') {
+                                    return data == null || data == "00:00:00" ? "" : data;
+                                }
+                                return row.downtime_seconds;
+                            }
+                        },
+                        { title: 'inRate', data: "input_rate" },
+                        { title: 'outRate', data: "output_rate" },
+                        { title: 'inErrors', data: "input_errors" },
+                        { title: 'outErrors', data: "output_errors" },
+                        { title: 'queueDrops', data: "queue_drops" },
+                    ]
+                });
+                
+            } else {
+                $("#tab3-content").html(`<pre><code>❌ Task failed: ${results[indexShIntArray].result.error}</code></pre>`);
+            }
+        
         }).finally(() => {
             close_alert();
             hide("#spinner");

@@ -63,8 +63,7 @@ function iprouteForm(id,data,callback) {
                + select('iprouteFamily','Address family',options(familys),'rib-address-family','text-info')
                + select('iprouteProtocol','Protocol',options(protocols),'route-source-protocol','text-danger')
                + select('iprouteNextHop','Next Hop',options(nexthops),'next-hop-next-hop-address','text-warning')
-               //+ input('iprouteNextHop','Next Hop','next-hop-next-hop-address','text-warning')
-               + input('iproutePrefix','Prefix','route-destination-prefix','text-primary-emphasis')
+               + input('iproutePrefix','Prefix','route-destination-prefix','text-secondary')
                + btn('iprouteRefresh','Filter');
     // Update DOM
     //$(selector).html(form(id,inputs));

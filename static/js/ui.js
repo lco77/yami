@@ -107,20 +107,42 @@ function parseShIntLink(rawText) {
 
   const data = [];
 
+  const prefixMap = {
+    Fa: "FastEthernet",
+    Bl: "Bluetooth",
+    Po: "Port-channel",
+    Lo: "Loopback",
+    Hu: "HundredGigE",
+    Gi: "GigabitEthernet",
+    Te: "TenGigabitEthernet",
+    Twe: "TwentyFiveGigE",
+    Vl: "Vlan"
+  };
+
+  const parse_port = (line, portCol, nameCol) => {
+    let val = line.substring(portCol, nameCol).trim();
+    for (const [prefix, replacement] of Object.entries(prefixMap)) {
+        if (val.startsWith(prefix)) {
+            val = val.replace(prefix, replacement);
+            break;
+        }
+    }
+    return val;
+  };
+
   for (const line of lines) {
-    const port = line.substring(portCol, nameCol).trim();
-    const name = line.substring(nameCol, downCol).trim();
+    const interface = parse_port(line, portCol, nameCol)
+    const description = line.substring(nameCol, downCol).trim();
     const downTime = line.substring(downCol, upCol).trim();
     const upTime = line.substring(upCol).trim();
 
     data.push({
-      port,
-      name,
-      down_time: downTime,
-      up_time: upTime
+      interface: interface,
+      description: description,
+      downtime: downTime,
+      uptime: upTime
     });
   }
-
   return data;
 }
 
@@ -131,13 +153,13 @@ function renderDynamicForm(categories, containerId, monitorTableId, url, deviceI
     const formHtml = `
     <br>
     <form id="filterForm" class="d-flex flex-wrap align-items-end gap-3 mb-3">
-        <div class="form-group">
-            <label for="parentSelector" class="form-label">Monit</label>
+        <div class="form-group col-2" >
+            <label for="parentSelector" class="form-label">Monitor Type</label>
             <select id="parentSelector" class="form-select"></select>
         </div>
 
-        <div class="form-group">
-            <label for="actionSelector" class="form-label">Sub-Type</label>
+        <div class="form-group col-2">
+            <label for="actionSelector" class="form-label">Data Set</label>
             <select id="actionSelector" class="form-select"></select>
         </div>
 
@@ -145,8 +167,8 @@ function renderDynamicForm(categories, containerId, monitorTableId, url, deviceI
         <div id="dynamicFilters" class="d-flex gap-3 flex-wrap"></div>
 
         <!-- Submit button aligned to far right -->
-        <div class="ms-auto">
-            <button id="submitAction" class="btn btn-success">Submit</button>
+        <div class="col-lg-1">
+            <button id="submitAction" class="btn btn-success form-control">Submit</button>
         </div>
     </form>
 `;
