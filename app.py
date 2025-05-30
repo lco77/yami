@@ -51,6 +51,11 @@ DNS_SUFFIXES = json.loads(os.environ.get("DNS_SUFFIXES"))
 
 # Init Flask app
 app = Flask(__name__)
+if os.environ['FLASK_ENV'] == 'development':
+    app.secret_key = 'FOR_TESTING_ONLY'
+    app.debug = True
+else:
+    app.secret_key = os.urandom(24).hex()
 
 # Caching
 app.config['CACHE_TYPE'] = 'redis'
@@ -74,11 +79,7 @@ app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_REDIS'] = Redis.from_url(f"{REDIS_URL}/1")
 Session(app)
 
-if os.environ['FLASK_ENV'] == 'development':
-    app.secret_key = 'REPLACE_WITH_SECURE_SECRET'
-    app.debug = True
-else:
-    app.secret_key = os.urandom(24).hex()
+
 
 # Attach Celery app
 celery_app = Celery('celery', broker=f"{REDIS_URL}/2", result_backend=f"{REDIS_URL}/2", task_ignore_result=False)
@@ -372,7 +373,6 @@ app.register_blueprint(ui_lan.bp)
 # UI SDWAN blueprint
 import ui_sdwan
 app.register_blueprint(ui_sdwan.bp)
-
 
 if __name__ == '__main__':
     app.run(debug=True)

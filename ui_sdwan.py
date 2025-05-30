@@ -37,6 +37,7 @@ async def index():
 @login_required
 async def show_device(fabric,id):
     user = read_user_from_session(session)
+    id = id.replace("_","/")
     try:
         if not fabric in sdwan.keys():
             return jsonify({"error": f"Invalid fabric {fabric}"}), 400
@@ -54,6 +55,7 @@ async def show_device(fabric,id):
 @bp.route('/<string:fabric>/<string:id>/interface/<string:if_name>', methods=['GET'])
 @login_required
 async def show_interface(fabric,id,if_name):
+    id = id.replace("_","/")
     if_name = if_name.replace("_","/")
     user = read_user_from_session(session)
     try:

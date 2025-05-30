@@ -172,7 +172,7 @@
 {% block script %}
 
 <script>
-    const id = "{{id}}";
+    const id = "{{id}}".replace("/","_");
     const hostname = "{{hostname}}";
     const fabric = "{{fabric}}";
     const data = JSON.parse('{{data.tojson()|safe}}');
@@ -243,8 +243,22 @@
                             },
                             { title: 'Speed', data: "speed" },
                             { title: 'Duplex', data: "duplex" },
-                            { title: 'inRate', data: "input_rate" },
-                            { title: 'outRate', data: "output_rate" },
+                            {
+                                title: 'inRate', data: "input_rate", render: function (data, type, row) {
+                                    if (type === 'display') {
+                                        return formatBitrate(data);
+                                    }
+                                    return data;
+                                }
+                            },
+                            {
+                                title: 'outRate', data: "output_rate", render: function (data, type, row) {
+                                    if (type === 'display') {
+                                        return formatBitrate(data);
+                                    }
+                                    return data;
+                                }
+                            },
                             { title: 'inErrors', data: "input_errors" },
                             { title: 'outErrors', data: "output_errors" },
                             { title: 'queueDrops', data: "queue_drops" },

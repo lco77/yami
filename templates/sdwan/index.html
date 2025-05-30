@@ -72,7 +72,7 @@
                 },
                 {
                     title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                        return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID', row.uuid)}>${row.hostname}</a></b>`
+                        return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID', row.uuid.replace("/","_"))}>${row.hostname}</a></b>`
                     }
                 },
                 { title: 'IP Address', data: "system_ip" },

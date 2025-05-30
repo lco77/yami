@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 SEMAPHORE = 10
 TIMEOUT = 15.0
-SESSION_LIFETIME = 3600
+SESSION_LIFETIME = 1800
 
 # Utility function to convert epoch uptime
 def ms_to_uptime_days(ms):

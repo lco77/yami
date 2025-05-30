@@ -38,6 +38,7 @@ async def get_devices(fabric):
 @login_required
 @csrf.exempt
 async def get_device_template_values(fabric,device_id,template_id):
+    device_id = device_id.replace("_","/")
     if not fabric in sdwan.keys():
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     data = await sdwan[fabric].get_device_template_values(device_id, template_id)
@@ -51,6 +52,7 @@ async def get_device_template_values(fabric,device_id,template_id):
 @roles_required(['admin'])
 @csrf.exempt
 async def set_device_template_values(fabric,device_id,template_id):
+    device_id = device_id.replace("_","/")
     if not fabric in sdwan.keys():
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     payload = request.get_json()
@@ -80,6 +82,7 @@ async def get_device_template_definition(fabric,template_id):
 @cache.cached(timeout=60, key_prefix=make_key)
 @csrf.exempt
 async def get_device_route_table(fabric,device_id):
+    device_id = device_id.replace("_","/")
     if not fabric in sdwan.keys():
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     data = await sdwan[fabric].get_device_route_table(device_id)
@@ -94,6 +97,7 @@ async def get_device_route_table(fabric,device_id):
 @cache.cached(timeout=86400, key_prefix=make_key)
 @csrf.exempt
 async def get_device_monitor_actions(fabric,device_id):
+    device_id = device_id.replace("_","/")
     if not fabric in sdwan.keys():
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     data = await sdwan[fabric].get_device_monitor_actions()
@@ -107,6 +111,7 @@ async def get_device_monitor_actions(fabric,device_id):
 @login_required
 @csrf.exempt
 async def get_device_monitor_actions_data(fabric,device_id):
+    device_id = device_id.replace("_","/")
     if not fabric in sdwan.keys():
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     payload = request.get_json()
