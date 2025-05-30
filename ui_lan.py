@@ -85,4 +85,4 @@ async def show_vlan(fabric,id,vlan):
         device_type = check_device_type(data.platform)
     except Exception as err:
         return jsonify({"error": str(err)}), 400
-    return render_template("lan/vlan.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data, vlan=vlan, name=name)
+    return render_template("lan/vlan.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data, fabric=fabric, vlan=vlan, name=name)
