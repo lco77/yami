@@ -23,7 +23,7 @@
         E-mail: {{ user.email }}
     </li>
     <li>
-        Roles: {{ user.roles }}
+        Roles: {{ user.roles | join(', ') | safe }}
     </li>
 </ul>
 

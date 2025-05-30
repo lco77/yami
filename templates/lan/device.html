@@ -22,6 +22,9 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link text-info" data-bs-toggle="tab" href="#tab3" aria-selected="false" role="tab" tabindex="-1">Interfaces</a>
         </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link text-info" data-bs-toggle="tab" href="#tab4" aria-selected="false" role="tab" tabindex="-1">Vlans</a>
+        </li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane fade active show" id="tab1" role="tabpanel">
@@ -79,6 +82,9 @@
         <div class="tab-pane fade" id="tab3" role="tabpanel">
             <div id="tab3-content"><table id="interfaceTable" class="table table-striped"></table></div>
         </div>
+        <div class="tab-pane fade" id="tab4" role="tabpanel">
+            <div id="tab4-content"><table id="vlanTable" class="table table-striped"></table></div>
+        </div>
     </div>
     </div>
 </div>
@@ -96,6 +102,7 @@
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
     const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
     const showInterfaceUrl = "{{ url_for('ui_lan.show_interface',fabric='FABRIC',id='ID',if_name='IF') }}";
+    const showVlanUrl = "{{ url_for('ui_lan.show_vlan',fabric='FABRIC',id='ID',vlan='VLAN') }}";
 
     // Tasks definitions
     let tasks = [
@@ -109,6 +116,7 @@
             },
             render: (result) => {
                 if (result.success) {
+
                     $("#tab2-content").html(`<pre><code>${escapeHtml(result.raw)}</code></pre>`);
                 } else {
                     $("#tab2-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
@@ -121,7 +129,65 @@
                 ip_address: data.ip_address,
                 use_textfsm: true,
                 device_type: deviceType,
-                cmd: "sh int"
+                cmd: "show interface"
+            }
+        },
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.ip_address,
+                use_textfsm: true,
+                device_type: deviceType,
+                cmd: "show vlan",
+            },
+            render: (result) => {
+                if (result.success) {
+                    $("#vlanTable").DataTable({
+                        layout: {
+                            topStart: 'search',
+                            topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                        },
+                        pageLength: 10,
+                        fixedHeader: true,
+                        order: [[2, 'asc']],
+                        data: result.parsed.filter(obj => !["1002", "1003", "1004", "1005"].includes(obj.vlan_id)),
+                        columns: [
+                            {
+                                title: 'Name', data: "vlan_name", render: function (data, type, row) {
+                                    return `<b><a class="text-primary" href=${showVlanUrl.replace('FABRIC', fabric).replace('ID',id).replace('VLAN',row.vlan_id)}?name=${data}>${data}</a></b>`
+                                }
+                            },
+                            {
+                                title: 'Status', data: "status", render: function (data, type, row) {
+                                    if (type === 'display') {
+                                        return data === "active" ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                                    }
+                                    return data === "active" ? true : false;
+                                }
+                            },
+                            { title: 'ID', data: "vlan_id" },
+                            {
+                                title: '# Interfaces', data: "interfaces", render: function (data, type, row) {
+                                    if (type === 'display') {
+                                        return data.length;
+                                    }
+                                    return data.length;
+                                }
+                            },
+                        ]
+                    });
+                } else {
+                    $("#tab4-content").html(`<pre><code>❌ Task failed: ${result.error}</code></pre>`);
+                }
+            }
+        },
+        {
+            type: "ssh_cmd",
+            params: {
+                ip_address: data.ip_address,
+                use_textfsm: true,
+                device_type: deviceType,
+                cmd: "show spanning-tree"
             }
         }
     ];
@@ -134,7 +200,7 @@
                 ip_address: data.ip_address,
                 use_textfsm: false,
                 device_type: deviceType,
-                cmd: "sh int link"
+                cmd: "show interface link"
             }
         });
     }
@@ -176,17 +242,13 @@
             });
 
             // Find results of "sh int" and "sh int link" + merge data
-            const indexShIntArray = results.findIndex(obj => obj.params.cmd === "sh int");
-            const indexShIntLinkArray = results.findIndex(obj => obj.params.cmd === "sh int link");
+            const indexShIntArray = results.findIndex(obj => obj.params.cmd === "show interface");
+            const indexShIntLinkArray = results.findIndex(obj => obj.params.cmd === "show interface link");
             if (results[indexShIntArray].result.success) {
                 const shIntArray = results[indexShIntArray].result.parsed;
                 let shIntLinkArray = [];
                 if (indexShIntLinkArray !== -1 && results[indexShIntLinkArray].result.success) {
-                    shIntLinkArray = parseShIntLink(results[indexShIntLinkArray].result.raw).map(row => ({
-                        ...row,
-                        uptime_seconds: timeToSeconds(row.uptime),
-                        downtime_seconds: timeToSeconds(row.downtime)
-                    }));
+                    shIntLinkArray = parseShIntLink(results[indexShIntLinkArray].result.raw);
                 }
                 const interfaceData = enrichInterfaces(shIntArray, shIntLinkArray);
 
@@ -196,7 +258,7 @@
                         topStart: 'search',
                         topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
                     },
-                    pageLength: 15,
+                    pageLength: 10,
                     fixedHeader: true,
                     data: interfaceData,
                     columns: [

@@ -71,3 +71,18 @@ async def show_interface(fabric,id,if_name):
     except Exception as err:
         return jsonify({"error": str(err)}), 400
     return render_template("lan/interface.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data, if_name=if_name)
+
+# LAN device VLAN page
+@bp.route('/<string:fabric>/<string:id>/vlan/<string:vlan>', methods=['GET'])
+@login_required
+async def show_vlan(fabric,id,vlan):
+    user = read_user_from_session(session)
+    name = request.args.get("name",None)
+    try:
+        r = await dnac[fabric].get_devices({"id":[id]})
+        data = r[0]
+        hostname = data.hostname
+        device_type = check_device_type(data.platform)
+    except Exception as err:
+        return jsonify({"error": str(err)}), 400
+    return render_template("lan/vlan.html", user=user, theme=session["theme"], id=id, hostname=hostname, device_type=device_type, data=data, vlan=vlan, name=name)

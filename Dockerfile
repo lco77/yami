@@ -31,4 +31,4 @@ USER yami
 EXPOSE 5000
 
 #set entrypoint
-CMD ["gunicorn", "--chdir", "/yami", "--bind", "0.0.0.0:5000", "app:app", "--workers", "2", "-k", "gevent"]
+CMD ["gunicorn", "--chdir", "/yami", "--bind", "0.0.0.0:5000", "app:app", "--workers", "1", "--threads", "4"]

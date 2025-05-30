@@ -27,9 +27,8 @@ services:
             LDAP_ROLES: '{"admin":["CN=..."],"read-only":["CN=..."]}'
             DNS_SERVERS: '["..."]'
             DNS_SUFFIXES: '["..."]'
-            DNAC_HOST: '...'
-            DNAC_USERNAME: '...'
-            DNAC_PASSWORD: '...'
+            DNAC_FABRICS: '[{"name":"DNAC","host":"some_host","username":"some_user","password":"some_password"}]'
+            SDWAN_FABRICS: '[{"name":"VManage","host":"some_host","username":"some_user","password":"some_password"}]'
 
         healthcheck:
           test: curl --fail -s http://localhost:5000/ || exit 1
@@ -39,7 +38,7 @@ services:
 
     yami-worker:
         image: nws/yami:latest
-        command: celery -A worker worker --concurrency=4 --loglevel=INFO
+        command: celery -A worker worker --concurrency=8 --loglevel=INFO
         working_dir: /yami
         container_name: yami-worker
         hostname: yami-worker

@@ -41,57 +41,57 @@ function escapeHtml(str) {
 
 // render a table from an object
 function objectToTable(obj, selector) {
-  const $table = $('<table class="table table-striped"><tbody></tbody></table>');
-  const $tbody = $table.find('tbody');
+    const $table = $('<table class="table table-striped"><tbody></tbody></table>');
+    const $tbody = $table.find('tbody');
 
-  for (const [key, value] of Object.entries(obj)) {
-    $tbody.append(`<tr><td><p class="text-primary"><b>${key}</b></p></td><td>${value}</td></tr>`);
-  }
+    for (const [key, value] of Object.entries(obj)) {
+        $tbody.append(`<tr><td><p class="text-primary"><b>${key}</b></p></td><td>${value}</td></tr>`);
+    }
 
-  $(selector).html($table);
+    $(selector).html($table);
 }
 
 // filter and re-map object keys, then return new object
 function mapObjectKeys(source, keyMap) {
-  const result = {};
+    const result = {};
 
-  keyMap.forEach(entry => {
-    const [srcKey, dstKey] = Object.entries(entry)[0];
-    if (srcKey in source) {
-      result[dstKey] = source[srcKey];
-    }
-  });
-  
-  return result;
+    keyMap.forEach(entry => {
+        const [srcKey, dstKey] = Object.entries(entry)[0];
+        if (srcKey in source) {
+            result[dstKey] = source[srcKey];
+        }
+    });
+
+    return result;
 }
 
 
 // convert time strings into seconds
 function timeToSeconds(timeStr) {
-  // HH:MM:SS format
-  if (/^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr)) {
-    const [h, m, s] = timeStr.split(':').map(Number);
-    return h * 3600 + m * 60 + s;
-  }
-
-  // Text format (e.g. 16w1d, 1d04h)
-  let total = 0;
-  const regex = /(\d+)([ywdhms])/g;
-  let match;
-  while ((match = regex.exec(timeStr)) !== null) {
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
-    switch (unit) {
-      case 'y': total += value * 52 * 7 * 24 * 3600; break;
-      case 'w': total += value * 7 * 24 * 3600; break;
-      case 'd': total += value * 24 * 3600; break;
-      case 'h': total += value * 3600; break;
-      case 'm': total += value * 60; break;
-      case 's': total += value; break;
+    // HH:MM:SS format
+    if (/^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr)) {
+        const [h, m, s] = timeStr.split(':').map(Number);
+        return h * 3600 + m * 60 + s;
     }
-  }
 
-  return total;
+    // Text format (e.g. 16w1d, 1d04h)
+    let total = 0;
+    const regex = /(\d+)([ywdhms])/g;
+    let match;
+    while ((match = regex.exec(timeStr)) !== null) {
+        const value = parseInt(match[1], 10);
+        const unit = match[2];
+        switch (unit) {
+            case 'y': total += value * 52 * 7 * 24 * 3600; break;
+            case 'w': total += value * 7 * 24 * 3600; break;
+            case 'd': total += value * 24 * 3600; break;
+            case 'h': total += value * 3600; break;
+            case 'm': total += value * 60; break;
+            case 's': total += value; break;
+        }
+    }
+
+    return total;
 }
 
 // Function to Format Bitrate
@@ -110,33 +110,19 @@ function formatBitrate(bps) {
     }
 }
 
-//parse "show int link" output
-function parseShIntLink(rawText) {
-  const lines = rawText.trim().split('\n');
-
-  // Remove the header line and grab column positions from it
-  const headerLine = lines.shift();
-  const portCol = headerLine.indexOf('Port');
-  const nameCol = headerLine.indexOf('Name');
-  const downCol = headerLine.indexOf('Down Time');
-  const upCol = headerLine.indexOf('Up Time');
-
-  const data = [];
-
-  const prefixMap = {
-    Fa: "FastEthernet",
-    Bl: "Bluetooth",
-    Po: "Port-channel",
-    Lo: "Loopback",
-    Hu: "HundredGigE",
-    Gi: "GigabitEthernet",
-    Te: "TenGigabitEthernet",
-    Twe: "TwentyFiveGigE",
-    Vl: "Vlan"
-  };
-
-  const parse_port = (line, portCol, nameCol) => {
-    let val = line.substring(portCol, nameCol).trim();
+// convert short interface name to its full length
+function interface_name(val) {
+    const prefixMap = {
+        Fa: "FastEthernet",
+        Bl: "Bluetooth",
+        Po: "Port-channel",
+        Lo: "Loopback",
+        Hu: "HundredGigE",
+        Gi: "GigabitEthernet",
+        Te: "TenGigabitEthernet",
+        Twe: "TwentyFiveGigE",
+        Vl: "Vlan"
+    };
     for (const [prefix, replacement] of Object.entries(prefixMap)) {
         if (val.startsWith(prefix)) {
             val = val.replace(prefix, replacement);
@@ -144,22 +130,42 @@ function parseShIntLink(rawText) {
         }
     }
     return val;
-  };
+};
 
-  for (const line of lines) {
-    const interface = parse_port(line, portCol, nameCol)
-    const description = line.substring(nameCol, downCol).trim();
-    const downTime = line.substring(downCol, upCol).trim();
-    const upTime = line.substring(upCol).trim();
+//parse "show int link" output
+function parseShIntLink(rawText) {
+    const lines = rawText.trim().split('\n');
 
-    data.push({
-      interface: interface,
-      description: description,
-      downtime: downTime,
-      uptime: upTime
-    });
-  }
-  return data;
+    // Remove the header line and grab column positions from it
+    const headerLine = lines.shift();
+    const portCol = headerLine.indexOf('Port');
+    const nameCol = headerLine.indexOf('Name');
+    const downCol = headerLine.indexOf('Down Time');
+    const upCol = headerLine.indexOf('Up Time');
+
+    const data = [];
+
+    function parse_port(line, portCol, nameCol) {
+        let val = line.substring(portCol, nameCol).trim();
+        return interface_name(val);
+    };
+
+    for (const line of lines) {
+        const interface = parse_port(line, portCol, nameCol)
+        const description = line.substring(nameCol, downCol).trim();
+        const downTime = line.substring(downCol, upCol).trim();
+        const upTime = line.substring(upCol).trim();
+
+        data.push({
+            interface: interface,
+            description: description,
+            downtime: downTime,
+            downtime_seconds: timeToSeconds(downTime),
+            uptime: upTime,
+            uptime_seconds: timeToSeconds(upTime)
+        });
+    }
+    return data;
 }
 
 function renderDynamicForm(categories, containerId, monitorTableId, url, deviceId, datatable) {
@@ -246,43 +252,43 @@ function renderDynamicForm(categories, containerId, monitorTableId, url, deviceI
             }
         });
 
-        show_alert('info','Hang on', 'Fetching realtime data...');
-        post(url,{},payload).then(monitorData=>{
-          // Extract column definitions dynamically
-          const monitorColumns = monitorData.header.columns.map(col => {
-              const base = {
-                  data: col.property,
-                  title: col.title || col.property,
-                  defaultContent: ''
-              };
-              if (col.dataType === 'date' && col.inputFormat === 'unix-time') {
-                  base.render = function(data) {
-                      if (!data) return '';
-                      const date = new Date(data); // convert seconds to date
-                      return date.toLocaleString();
-                  };
-              }
-              return base;
-          });
-          // reset datatable
-          if ($.fn.DataTable.isDataTable(monitorTableId)) {
-              $(monitorTableId).DataTable().destroy();
-          }
-          $(monitorTableId).empty();  // clear headers too
-          $(monitorTableId).DataTable({
-              layout: {
-                  topStart: 'search',
-                  topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
-              },
-              ordering: false,
-              pageLength: 10,
-              fixedHeader: true,
-              data: monitorData.data,
-              columns: monitorColumns
-          });
-          close_alert();
-        }).catch(error=>{
-          show_alert('danger', 'Error', 'Failed to get realtime data.');
+        show_alert('info', 'Hang on', 'Fetching realtime data...');
+        post(url, {}, payload).then(monitorData => {
+            // Extract column definitions dynamically
+            const monitorColumns = monitorData.header.columns.map(col => {
+                const base = {
+                    data: col.property,
+                    title: col.title || col.property,
+                    defaultContent: ''
+                };
+                if (col.dataType === 'date' && col.inputFormat === 'unix-time') {
+                    base.render = function (data) {
+                        if (!data) return '';
+                        const date = new Date(data); // convert seconds to date
+                        return date.toLocaleString();
+                    };
+                }
+                return base;
+            });
+            // reset datatable
+            if ($.fn.DataTable.isDataTable(monitorTableId)) {
+                $(monitorTableId).DataTable().destroy();
+            }
+            $(monitorTableId).empty();  // clear headers too
+            $(monitorTableId).DataTable({
+                layout: {
+                    topStart: 'search',
+                    topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                },
+                ordering: false,
+                pageLength: 10,
+                fixedHeader: true,
+                data: monitorData.data,
+                columns: monitorColumns
+            });
+            close_alert();
+        }).catch(error => {
+            show_alert('danger', 'Error', 'Failed to get realtime data.');
         })
 
     });
@@ -308,4 +314,107 @@ function renderFilterFields(fields) {
         `;
         $container.append(inputHtml);
     });
+}
+
+// parse vlan data
+function parseVlanData(arrayShInt, arrayShIntSwitchport, arrayShSpaVlan, vlanId = null) {
+
+    function parseTrunkVlans(trunkingVlans) {
+        const vlanSet = new Set();
+        trunkingVlans.forEach(entry => {
+            entry.split(',').forEach(part => {
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(Number);
+                    for (let i = start; i <= end; i++) {
+                        vlanSet.add(i.toString());
+                    }
+                } else if (part.trim().toUpperCase() === "ALL") {
+                    for (let i = 1; i <= 4094; i++) {
+                        vlanSet.add(i.toString());
+                    }
+                } else {
+                    vlanSet.add(part.trim());
+                }
+            });
+        });
+        return Array.from(vlanSet);
+    }
+
+    function summarizeVlans(vlans) {
+        if (vlans.length >= 4094) return "ALL";
+
+        const nums = vlans.map(Number).sort((a, b) => a - b);
+        const ranges = [];
+
+        let start = nums[0];
+        let end = nums[0];
+
+        for (let i = 1; i < nums.length; i++) {
+            if (nums[i] === end + 1) {
+                end = nums[i];
+            } else {
+                if (start === end) {
+                    ranges.push(start.toString());
+                } else {
+                    ranges.push(`${start}-${end}`);
+                }
+                start = end = nums[i];
+            }
+        }
+
+        // Push the final range
+        if (start === end) {
+            ranges.push(start.toString());
+        } else {
+            ranges.push(`${start}-${end}`);
+        }
+
+        return ranges.join(',');
+    }
+
+    const switchportMap = {};
+    arrayShIntSwitchport.forEach(entry => {
+        switchportMap[interface_name(entry.interface)] = entry;
+    });
+
+    const stpMap = {};
+    arrayShSpaVlan.forEach(entry => {
+        const key = `${interface_name(entry.interface)}::${entry.vlan_id}`;
+        stpMap[key] = entry;
+    });
+
+    return arrayShInt.map(intf => {
+        const iface = intf.interface;
+        const spData = switchportMap[iface] || {};
+        const mode = spData.mode === "trunk" ? "trunk" : "access";
+
+        let vlanList = [];
+        if (mode === "access") {
+            vlanList = [spData.access_vlan || spData.native_vlan].filter(Boolean);
+        } else {
+            vlanList = parseTrunkVlans(spData.trunking_vlans || []);
+        }
+
+        if (vlanId && !vlanList.includes(vlanId)) {
+            return null;
+        }
+
+        const stpKey = `${iface}::${vlanId || vlanList[0]}`;
+        const stpEntry = stpMap[stpKey] || {};
+
+        return {
+            interface: iface,
+            description: intf.description || "",
+            status: intf.link_status === "up" ? "up" : "down",
+            mode: mode,
+            vlans: vlanList,
+            vlans_str: summarizeVlans(vlanList),
+            port_id: stpEntry.port_id || "",
+            stp_cost: stpEntry.cost || "",
+            stp_priority: stpEntry.port_id || "",
+            stp_role: stpEntry.role || "",
+            stp_status: stpEntry.status || "",
+            stp_type: stpEntry.type?.trim() || ""
+        };
+    }).filter(Boolean); // Remove null entries
 }
