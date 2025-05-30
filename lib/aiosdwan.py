@@ -174,7 +174,7 @@ class Vmanage:
             async with httpx.AsyncClient(headers=headers, verify=self.verify, timeout=self.timeout) as client:
                 # login form
                 response = await client.post(f"{self.base_url}/j_security_check", data=data)
-                print(f'LOGIN {response.status_code} text={response.text} headers={response.headers}')
+                #print(f'LOGIN {response.status_code} text={response.text} headers={response.headers}')
                 if (response.status_code != 200 or response.text.startswith('<html>')):
                     #print(f'Vmanage login failed: user {self.username} on {self.host}')
                     raise
@@ -184,7 +184,7 @@ class Vmanage:
                 }
                 # CSRF token
                 response = await client.get(f"{self.base_url}/dataservice/client/token")
-                print(f'CSRF {response.status_code} text={response.text} headers={response.headers}')
+                #print(f'CSRF {response.status_code} text={response.text} headers={response.headers}')
                 if response.status_code != 200:
                     raise
                 # Update self
@@ -198,7 +198,7 @@ class Vmanage:
 
     async def _get(self, path: str, params: dict[str, Any] = None) -> Optional[str]:
         check = await self.connect()
-        print(f'check_auth={check}')
+        #print(f'check_auth={check}')
         if not await self.connect():
             return None
 
@@ -207,10 +207,16 @@ class Vmanage:
             async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
                 url = f"{self.base_url}/dataservice{path}"
                 response = await client.get(url, params=params)
-                print(f'{response.status_code} GET {url} params={params} text={response.text}')
-                if response.status_code == 200:
-                    return response.text
-                return None
+                retried = False
+                while not retried:
+                    if response.text.startswith("<html>"):
+                        await self.connect()
+                        retried = True
+                    print(f'Vmanage: {response.status_code} GET {url} params={params}')
+                    #print(f'Vmanage: {response.status_code} GET {url} params={params} text={response.text}')
+                    if response.status_code == 200:
+                        return response.text
+                    return None
         except httpx.HTTPError as exc:
             raise ConnectionError(f"ConnectionError on GET {path}: {exc}") from exc
 
@@ -231,10 +237,16 @@ class Vmanage:
             async with httpx.AsyncClient(headers=self.headers,verify=self.verify,timeout=self.timeout) as client:
                 url = f"{self.base_url}/dataservice{path}"
                 response = await client.post(url, params=params, data=json.dumps(data))
-                print(f'{response.status_code} POST {url} params={params} text={response.text}')
-                if response.status_code == 200:
-                    return response.text
-                return None
+                retried = False
+                while not retried:
+                    if response.text.startswith("<html>"):
+                        await self.connect()
+                        retried = True
+                    print(f'Vmanage: {response.status_code} POST {url} params={params}')
+                    #print(f'Vmanage: {response.status_code} POST {url} params={params} text={response.text}')
+                    if response.status_code == 200:
+                        return response.text
+                    return None
         except httpx.HTTPError as exc:
             raise ConnectionError(f"ConnectionError on POST {path}: {exc}") from exc
 

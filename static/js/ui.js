@@ -94,6 +94,22 @@ function timeToSeconds(timeStr) {
   return total;
 }
 
+// Function to Format Bitrate
+function formatBitrate(bps) {
+    bps = Number(bps); // Ensure it's a number
+    if (isNaN(bps)) return "Invalid";
+
+    if (bps >= 1e9) {
+        return (bps / 1e9).toFixed(2) + " gb/s";
+    } else if (bps >= 1e6) {
+        return (bps / 1e6).toFixed(2) + " mb/s";
+    } else if (bps >= 1e3) {
+        return (bps / 1e3).toFixed(2) + " kb/s";
+    } else {
+        return bps + " b/s";
+    }
+}
+
 //parse "show int link" output
 function parseShIntLink(rawText) {
   const lines = rawText.trim().split('\n');

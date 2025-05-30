@@ -234,8 +234,22 @@
                                 return row.downtime_seconds;
                             }
                         },
-                        { title: 'inRate', data: "input_rate" },
-                        { title: 'outRate', data: "output_rate" },
+                        {
+                            title: 'inRate', data: "input_rate", render: function (data, type, row) {
+                                if (type === 'display') {
+                                    return formatBitrate(data);
+                                }
+                                return data;
+                            }
+                        },
+                        {
+                            title: 'outRate', data: "output_rate", render: function (data, type, row) {
+                                if (type === 'display') {
+                                    return formatBitrate(data);
+                                }
+                                return data;
+                            }
+                        },
                         { title: 'inErrors', data: "input_errors" },
                         { title: 'outErrors', data: "output_errors" },
                         { title: 'queueDrops', data: "queue_drops" },
