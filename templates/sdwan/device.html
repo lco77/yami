@@ -234,11 +234,7 @@
                             { title: 'Description', data: "description" },
                             {
                                 title: 'Status', data: "protocol_status", render: function (data, type, row) {
-                                    if (data.startsWith("up")) {
-                                        return `<p class="text-success">${data}</p>`;
-                                    } else {
-                                        return `<p class="text-danger">${data}</p>`;
-                                    }
+                                        return data.startsWith("up") ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
                                 }
                             },
                             { title: 'Speed', data: "speed" },

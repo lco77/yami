@@ -23,7 +23,12 @@
         E-mail: {{ user.email }}
     </li>
     <li>
-        Roles: {{ user.roles | join(', ') | safe }}
+        Roles:<br>
+        <ul>
+            {% for role in user.roles %}
+                <li>{{ role }}</li>
+            {% endfor %}
+        </ul>
     </li>
 </ul>
 

@@ -44,8 +44,13 @@
             },
             pageLength: 10,
             fixedHeader: true,
-            order: [[3, 'asc']],
+            order: [[0, 'asc']],
             columns: [
+                {
+                    title: 'Hostname', data: "hostname", render: function (data, type, row) {
+                        return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID', row.uuid.replace("/","_"))}>${row.hostname}</a></b>`
+                    }
+                },
                 {
                     title: 'Reachable', data: "is_reachable", render: function (data, type, row) {
                         if (type === 'display') {
@@ -68,11 +73,6 @@
                             return data ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
                         }
                         return data;
-                    }
-                },
-                {
-                    title: 'Hostname', data: "hostname", render: function (data, type, row) {
-                        return `<b><a class="text-primary" href=${showDeviceUrl.replace('FABRIC', fabric).replace('ID', row.uuid.replace("/","_"))}>${row.hostname}</a></b>`
                     }
                 },
                 { title: 'IP Address', data: "system_ip" },

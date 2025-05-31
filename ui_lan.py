@@ -36,14 +36,14 @@ class Device:
 
 # LAN devices index
 @bp.route('/', methods=['GET'])
-@login_required
+@roles_required(["lan_admin","lan_operator"])
 async def index():
     user = read_user_from_session(session)
     return render_template("lan/index.html", user=user, theme=session["theme"], fabrics=list(dnac.keys()))
 
 # LAN device page
 @bp.route('/<string:fabric>/<string:id>', methods=['GET'])
-@login_required
+@roles_required(["lan_admin","lan_operator"])
 async def show_device(fabric,id):
     user = read_user_from_session(session)
     try:
@@ -59,7 +59,7 @@ async def show_device(fabric,id):
 
 # LAN device interface page
 @bp.route('/<string:fabric>/<string:id>/interface/<string:if_name>', methods=['GET'])
-@login_required
+@roles_required(["lan_admin","lan_operator"])
 async def show_interface(fabric,id,if_name):
     if_name = if_name.replace("_","/")
     user = read_user_from_session(session)
@@ -74,7 +74,7 @@ async def show_interface(fabric,id,if_name):
 
 # LAN device VLAN page
 @bp.route('/<string:fabric>/<string:id>/vlan/<string:vlan>', methods=['GET'])
-@login_required
+@roles_required(["lan_admin","lan_operator"])
 async def show_vlan(fabric,id,vlan):
     user = read_user_from_session(session)
     name = request.args.get("name",None)

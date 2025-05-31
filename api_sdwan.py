@@ -21,7 +21,7 @@ bp = Blueprint('api_sdwan', __name__, url_prefix='/api/sdwan')
 
 # get devices
 @bp.route("/<string:fabric>/device", methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 @cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
 async def get_devices(fabric):
@@ -35,7 +35,7 @@ async def get_devices(fabric):
 
 # get device template values
 @bp.route("/<string:fabric>/device/<string:device_id>/template_values/<string:template_id>", methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 @csrf.exempt
 async def get_device_template_values(fabric,device_id,template_id):
     device_id = device_id.replace("_","/")
@@ -49,7 +49,7 @@ async def get_device_template_values(fabric,device_id,template_id):
 
 # set device template values
 @bp.route("/<string:fabric>/device/<string:device_id>/template_values/<string:template_id>", methods=['POST'])
-@roles_required(['admin'])
+@roles_required(["sdwan_admin"])
 @csrf.exempt
 async def set_device_template_values(fabric,device_id,template_id):
     device_id = device_id.replace("_","/")
@@ -64,7 +64,7 @@ async def set_device_template_values(fabric,device_id,template_id):
 
 # get device template definition
 @bp.route("/<string:fabric>/device_template/<string:template_id>/definition", methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 @cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
 async def get_device_template_definition(fabric,template_id):
@@ -78,7 +78,7 @@ async def get_device_template_definition(fabric,template_id):
 
 # get device route table
 @bp.route("/<string:fabric>/device/<string:device_id>/route_table", methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 @cache.cached(timeout=60, key_prefix=make_key)
 @csrf.exempt
 async def get_device_route_table(fabric,device_id):
@@ -93,7 +93,7 @@ async def get_device_route_table(fabric,device_id):
 
 # get device monitor actions
 @bp.route("/<string:fabric>/device/<string:device_id>/monitor_actions", methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 @cache.cached(timeout=86400, key_prefix=make_key)
 @csrf.exempt
 async def get_device_monitor_actions(fabric,device_id):
@@ -108,7 +108,7 @@ async def get_device_monitor_actions(fabric,device_id):
 
 # get device monitor actions data
 @bp.route("/<string:fabric>/device/<string:device_id>/monitor_actions", methods=['POST'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 @csrf.exempt
 async def get_device_monitor_actions_data(fabric,device_id):
     device_id = device_id.replace("_","/")

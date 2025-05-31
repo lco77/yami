@@ -27,14 +27,14 @@ class Device:
 
 # SDWAN devices index
 @bp.route('/', methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 async def index():
     user = read_user_from_session(session)
     return render_template("sdwan/index.html", user=user, theme=session["theme"], fabrics=list(sdwan.keys()))
 
 # SDWAN device page
 @bp.route('/<string:fabric>/<string:id>', methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 async def show_device(fabric,id):
     user = read_user_from_session(session)
     id = id.replace("_","/")
@@ -53,7 +53,7 @@ async def show_device(fabric,id):
 
 # LAN device interface page
 @bp.route('/<string:fabric>/<string:id>/interface/<string:if_name>', methods=['GET'])
-@login_required
+@roles_required(["sdwan_admin","sdwan_operator"])
 async def show_interface(fabric,id,if_name):
     id = id.replace("_","/")
     if_name = if_name.replace("_","/")

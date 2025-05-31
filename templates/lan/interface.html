@@ -51,7 +51,7 @@
     const hostname = "{{data.hostname}}";
     const fabric = "{{fabric}}";
     const deviceType = "{{device_type}}";
-    const data = JSON.parse('{{data.tojson()|safe}}');
+    const data = JSON.parse('{{data.to_json()|safe}}');
     const pollInterval = 2000;
     const resolveDnsUrl = "{{url_for('resolve')}}";
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";

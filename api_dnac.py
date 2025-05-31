@@ -20,7 +20,7 @@ bp = Blueprint('api_dnac', __name__, url_prefix='/api/dnac')
 
 # get devices
 @bp.route("/<string:fabric>/device", methods=['GET'])
-@login_required
+@roles_required(["lan_admin","lan_operator"])
 @cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
 async def get_devices(fabric):
@@ -28,13 +28,13 @@ async def get_devices(fabric):
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     data = await dnac[fabric].get_devices(request.args)
     if data:
-        return [ device.todict() for device in data ]
+        return [ device.to_dict() for device in data ]
     else:
         return jsonify({"error": f"No data"}), 400
 
 # get device
 @bp.route("/<string:fabric>/device/<string:id>", methods=['GET'])
-@login_required
+@roles_required(["lan_admin","lan_operator"])
 @cache.cached(timeout=300, key_prefix=make_key)
 @csrf.exempt
 async def get_device(fabric,id):
@@ -42,6 +42,6 @@ async def get_device(fabric,id):
         return jsonify({"error": f"Invalid fabric {fabric}"}), 400
     data = await dnac[fabric].get_device(id)
     if data:
-        return data
+        return data.to_dict()
     else:
         return jsonify({"error": f"No data"}), 400

@@ -96,7 +96,7 @@
     const hostname = "{{hostname}}";
     const fabric = "{{fabric}}";
     const deviceType = "{{device_type}}";
-    const data = JSON.parse('{{data.tojson()|safe}}');
+    const data = JSON.parse('{{data.to_json()|safe}}');
     const pollInterval = 2000;
     const resolveDnsUrl = "{{url_for('resolve')}}";
     const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
@@ -167,7 +167,7 @@
                             },
                             { title: 'ID', data: "vlan_id" },
                             {
-                                title: '# Interfaces', data: "interfaces", render: function (data, type, row) {
+                                title: '# Access Interfaces', data: "interfaces", render: function (data, type, row) {
                                     if (type === 'display') {
                                         return data.length;
                                     }
@@ -271,6 +271,11 @@
                         { title: 'Description', data: "description" },
                         {
                             title: 'Status', data: "protocol_status", render: function (data, type, row) {
+                                if (type === 'display') {
+                                    return data.startsWith("up") ? "<p class='text-center'><i class='bi bi-check-circle-fill text-success'></i></p>" : "<p class='text-center'><i class='bi bi-x-circle-fill text-danger'></i></p>";
+                                } else {
+                                    return data.startsWith("up") ? true : false
+                                }
                                 if (data.startsWith("up")) {
                                     return `<p class="text-success">${data}</p>`;
                                 } else {

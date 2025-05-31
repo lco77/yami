@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Yami{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <br>
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">WLAN</h4>
+            <div id="fabric-buttons" class="btn-group" role="group" aria-label="Fabric selection">
+                {% for item in fabrics %}
+                <button type="button" class="btn btn-outline-primary fabric-btn" data-fabric="{{ item }}">
+                    {{ item }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <table id="table"  class="table table-striped align-top"></table>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+    let fabric = "{{ fabrics[0] }}"; // default to first fabric
+    const getTemplatesUrl = "{{ url_for('api_meraki.get_templates',fabric='FABRIC') }}";
+    const getNetworksUrl = "{{ url_for('api_meraki.get_networks',fabric='FABRIC') }}";
+    const showNetworkUrl = "{{ url_for('ui_wlan.show_network',fabric='FABRIC',id='ID') }}";
+
+    // init datatable
+    let table = new DataTable('#table',{
+                layout: {
+                    topStart: 'search',
+                    topEnd: { buttons: ['pageLength', 'copy', 'excel', 'csv'] }
+                },
+                pageLength: 10,
+                fixedHeader: true,
+                order: [[0, 'asc']],
+                columns: [
+                    {
+                        title: 'Network', data: "name", render: function (data, type, row) {
+                            return `<b><a class="text-primary" href=${showNetworkUrl.replace('FABRIC', fabric).replace('ID',row.id)}>${data}</a></b>`
+                        }
+                    },
+                    {
+                        title: 'Type', data: "type", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data.join("<br>");
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Template', data: "template_name", render: function (data, type, row) {
+                            if (type === 'display') {
+                                return data;
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Comment', data: "notes"
+                    },
+                    {
+                        title: 'URL', data: "url", render: function (data, type, row) {
+                            return `<a class="text-primary" href=${data}><i class="bi bi-box-arrow-up-right"></i></a>`;
+                        }
+                    },
+
+                ]
+            });
+
+    // get data and render table
+    $(document).ready(function () {
+
+        // Add 'active' class to the first button
+        $('#fabric-buttons .fabric-btn').first().addClass('active');
+        loadData(fabric);
+
+        // Click handler to update the fabric variable
+        $('.fabric-btn').on('click', function () {
+            $('.fabric-btn').removeClass('active');
+            $(this).addClass('active');
+            fabric = $(this).data('fabric');
+            loadData(fabric);
+        });
+
+        function loadData(fabric) {
+            show('#spinner');
+            Promise.all([
+                get(getTemplatesUrl.replace("FABRIC",fabric)),
+                get(getNetworksUrl.replace("FABRIC",fabric))
+            ])
+            .then(([templates, networks]) => {
+                table.clear().rows.add(transformNetworks(networks, templates)).draw();
+                hide('#spinner');
+            })
+            .catch(error => {
+                hide('#spinner');
+                show_alert('danger','Error','Failed to get data.');
+            });
+
+
+
+        };
+
+    });
+</script>
+{% endblock %}

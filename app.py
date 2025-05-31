@@ -346,11 +346,14 @@ def home():
             "text": "View and operate LAN switches",
             "url": url_for('ui_lan.index')
         },
+        "WLAN": {
+            "text": "View and operate WLAN networks and devices",
+            "url": url_for('ui_wlan.index')
+        },
         "SDWAN": {
             "text": "View and operate SDWAN routers",
             "url": url_for('ui_sdwan.index')
         }
-
     }
     return render_template("home.html", user=user, link_map=link_map, theme=session["theme"])
 
@@ -366,6 +369,10 @@ app.register_blueprint(api_dnac.bp)
 import api_sdwan
 app.register_blueprint(api_sdwan.bp)
 
+# API MERAKI blueprint
+import api_meraki
+app.register_blueprint(api_meraki.bp)
+
 # UI LAN blueprint
 import ui_lan
 app.register_blueprint(ui_lan.bp)
@@ -373,6 +380,10 @@ app.register_blueprint(ui_lan.bp)
 # UI SDWAN blueprint
 import ui_sdwan
 app.register_blueprint(ui_sdwan.bp)
+
+# UI WLAN blueprint
+import ui_wlan
+app.register_blueprint(ui_wlan.bp)
 
 if __name__ == '__main__':
     app.run(debug=True)

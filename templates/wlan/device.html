@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Yami{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <br>
+        <h4>{{device.name}}</h4>
+        <hr>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" data-bs-toggle="tab" href="#tab1" aria-selected="true" role="tab">Summary</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link text-info" data-bs-toggle="tab" href="#tab2" aria-selected="false" role="tab">Monitor</a>
+        </li>
+
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane fade active show" id="tab1" role="tabpanel">
+            <div id="tab1-content">
+                <div class="row">
+                    <div class="col">
+                        <table class="table table-striped">
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Name</b></p>
+                                </td>
+                                <td>{{device.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Network</b></p>
+                                </td>
+                                <td>{{network.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>IP Address</b></p>
+                                </td>
+                                <td>{{device.ip_address}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Version</b></p>
+                                </td>
+                                <td>{{device.version}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Model</b></p>
+                                </td>
+                                <td>{{device.model}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Serial</b></p>
+                                </td>
+                                <td>{{device.serial}}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Tags</b></p>
+                                </td>
+                                <td id="tags"></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Device URL</b></p>
+                                </td>
+                                <td><a href="{{device.url}}">{{device.url}}</a></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p class="text-primary"><b>Network URL</b></p>
+                                </td>
+                                <td><a href="{{network.url}}">{{network.url}}</a></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col">
+                        <div id="map" style="height: 98%";></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="tab2" role="tabpanel">
+            <div id="tab2-content">
+                <table id="deviceTable" class="table table-striped"></table>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const id = "{{id}}";
+    const name = "{{device.name}}";
+    const fabric = "{{fabric}}";
+    const device = JSON.parse('{{device.to_json()|safe}}');
+    const network = JSON.parse('{{network.to_json()|safe}}');
+    const pollInterval = 2000;
+    const createTaskUrl = "{{url_for('api_tasks.create_task')}}";
+    const getTaskUrl = "{{url_for('api_tasks.get_task',task_id='DUMMY')}}";
+
+    
+
+
+    // Run tasks
+    $(document).ready(function () {
+        // render tags badges
+        const badgeMap = buildBadgeMapFromTags([device]);
+        const tags = device.tags.slice().sort((a, b) => a.localeCompare(b)).map(tag => badgeMap[tag]).join(" ");
+        $("#tags").html(tags);
+
+        // openstreetmap
+        var map = L.map('map').setView([device.latitude, device.longitude], 17);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        var marker = L.marker([device.latitude, device.longitude]).addTo(map);
+
+
+    });
+
+</script>
+{% endblock %}

@@ -418,3 +418,66 @@ function parseVlanData(arrayShInt, arrayShIntSwitchport, arrayShSpaVlan, vlanId 
         };
     }).filter(Boolean); // Remove null entries
 }
+
+// Parse Meraki networks
+function transformNetworks(networks, templates) {
+    // Build lookup map from template ID to template object
+    const templateMap = Object.fromEntries(templates.map(t => [t.id, t]));
+
+    return networks.map(net => {
+        const isTemplateBased = net.raw_data.isBoundToConfigTemplate;
+        const templateId = isTemplateBased ? net.raw_data.configTemplateId : null;
+        const template = templateId ? templateMap[templateId] : null;
+
+        return {
+            id: net.id,
+            template_id: templateId,
+            template_name: template ? template.name : null,
+            name: net.name,
+            url: net.url,
+            notes: net.raw_data.notes || null,
+            type: net.raw_data.productTypes || [],
+            tags: net.raw_data.tags || []
+        };
+    });
+}
+
+// Meraki: render badges from a list of tags
+function buildBadgeMapFromTags(data) {
+    const colors = [
+        "primary", "secondary", "success",
+        "danger", "warning", "info", "light", "dark"
+    ];
+
+    // Step 1: Collect all tags
+    const tagSet = new Set();
+    data.forEach(item => {
+        if (Array.isArray(item.tags)) {
+            item.tags.forEach(tag => tagSet.add(tag));
+        }
+    });
+
+    // Step 2: Sort tags alphabetically
+    const sortedTags = Array.from(tagSet).sort((a, b) => a.localeCompare(b));
+
+    // Step 3: Assign colors and build map
+    const badgeMap = {};
+    let lastColorIndex = -1;
+
+    for (let i = 0; i < sortedTags.length; i++) {
+        let colorIndex = (lastColorIndex + 1) % colors.length;
+
+        // Ensure no adjacent same color
+        if (colorIndex === lastColorIndex && colors.length > 1) {
+            colorIndex = (colorIndex + 1) % colors.length;
+        }
+
+        const color = colors[colorIndex];
+        lastColorIndex = colorIndex;
+
+        const tag = sortedTags[i];
+        badgeMap[tag] = `<span class="badge bg-${color} me-1">${tag}</span>`;
+    }
+
+    return badgeMap;
+}

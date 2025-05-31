@@ -45,10 +45,10 @@ class DnacDevice:
             raw_data=device
         )
 
-    def todict(self):
+    def to_dict(self):
         return asdict(self)
 
-    def tojson(self):
+    def to_json(self):
         return json.dumps(asdict(self))  
     
 class Dnac:
